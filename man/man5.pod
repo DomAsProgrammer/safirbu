@@ -1,0 +1,1734 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+Safirbu Configs - Configuration files for safirbu
+
+=head1 DESCRIPTION
+
+=begin comment
+
+WORK Check with languagetool up to this point.
+
+=end comment
+
+I<safirbu> reads configuration data from C</etc/safirbu> (I<Linux>) or C</usr/local/etc/safirbu> (I<FreeBSD>). The basic format is ini-like.
+
+=over 2
+
+=item C<etc/safirbu/config>
+
+The S<main configuration file.>
+
+=item C<etc/safirbu/jobs/*.job>
+
+Configuration files for individual jobs.
+The job names become case folded, this means S<B<job names are handled case-insensitive>>.
+The file name (without suffix) will be the job's name and represents all configuration for the job that I<safirbu> needs. Although, usually some common settings will be taken from the S<main configuration file,> as well. This is done to reduce redundancy. To allow full control over these configurations, there are mechanisms to combine options or empty an existing list to fully overwrite any configuration existing for the job of this name. More details can be found below. To check the final configuration, use the command S<< C<< safirbu show <job> >> >>. (I<L<safirbu(8)>>)
+Furthermore, if neither S<C<Host Name>> nor S<C<IP v46>> are set, the job's name will be used as the hostname.
+
+=item C<etc/safirbu/includes>
+
+=item C<etc/safirbu/excludes>
+
+Include/exclude files for rsync. Automatically added to the rsync call for a job with the same name. Case folding is applied here, too.
+See L<rsync(1)>'s --include-from and --exclude-from for details.
+
+=back
+
+=head1 SYNOPSIS
+
+=head2 C<etc/safirbu/config>
+
+  Destination			= %DESTINATION%
+  Space				= %SPACE%
+
+  Log Level			= %LOGLEVEL%
+  Verbosity Level		= %VERBOSITY%
+
+  Bin Rsync			= %BINRSYNC%
+  Bin Nice			= %BINNICE%
+  Bin IONice			= %BINIONICE%
+  Bin Du			= %BINDU%
+  Bin Find			= %BINFIND%
+  Bin Wc			= %BINWC%
+
+  Include From			= %INCLUDEFROM%
+  Exlcude From			= %EXCLUDEFROM%
+  Nice Server			= %NICESERVER%
+  Nice Client			= %NICECLIENT%
+
+  Global Pre Run		= %GLOBALPRERUN%
+  Global Pre Fail		= %GLOBALPREFAIL%
+  Server Pre Run		= %SERVERPRERUN%
+  Server Pre Fail		= %SERVERPREFAIL%
+  Client Pre Run		= %PRERUN%
+  Client Pre Fail		= %PREFAIL%
+  Backup Failure Handling	= %BACKUPFAILURE%
+  Client Post Run		= %POSTRUN%
+  Client Post Fail		= %POSTFAIL%
+  Server Post Run		= %SERVERPOSTRUN%
+  Server Post Fail		= %SERVERPOSTFAIL%
+  Global Post Run		= %GLOBALPOSTRUN%
+  Global Post Fail		= %GLOBALPOSTFAIL%
+
+  [Year]
+  Time Border			= %TIMEBORDERYEAR%
+  Quantity			= %QUANTITYYEAR%
+  Include From			= %INCLUDEFROMYEAR%
+  Exlcude From			= %EXCLUDEFROMYEAR%
+  Server Pre Run		= %SERVERPRERUNYEAR%
+  Server Pre Fail		= %SERVERPREFAILYEAR%
+  Client Pre Run		= %PRERUNYEAR%
+  Client Pre Fail		= %PREFAILYEAR%
+  Backup Failure Handling	= %BACKUPFAILUREYEAR%
+  Client Post Run		= %POSTRUNYEAR%
+  Client Post Fail		= %POSTFAILYEAR%
+  Server Post Run		= %SERVERPOSTRUNYEAR%
+  Server Post Fail		= %SERVERPOSTFAILYEAR%
+
+  [Month]
+  Time Border			= %TIMEBORDERMONTH%
+  Quantity			= %QUANTITYMONTH%
+  Include From			= %INCLUDEFROMMONTH%
+  Exlcude From			= %EXCLUDEFROMMONTH%
+  Server Pre Run		= %SERVERPRERUNMONTH%
+  Server Pre Fail		= %SERVERPREFAILMONTH%
+  Client Pre Run		= %PRERUNMONTH%
+  Client Pre Fail		= %PREFAILMONTH%
+  Backup Failure Handling	= %BACKUPFAILUREMONTH%
+  Client Post Run		= %POSTRUNMONTH%
+  Client Post Fail		= %POSTFAILMONTH%
+  Server Post Run		= %SERVERPOSTRUNMONTH%
+  Server Post Fail		= %SERVERPOSTFAILMONTH%
+
+  [Week]
+  Time Border			= %TIMEBORDERWEEK%
+  Quantity			= %QUANTITYWEEK%
+  Include From			= %INCLUDEFROMWEEK%
+  Exclude From			= %EXCLUDEFROMWEEK%
+  Server Pre Run		= %SERVERPRERUNWEEK%
+  Server Pre Fail		= %SERVERPREFAILWEEK%
+  Client Pre Run		= %PRERUNWEEK%
+  Client Pre Fail		= %PREFAILWEEK%
+  Backup Failure Handling	= %BACKUPFAILUREWEEK%
+  Client Post Run		= %POSTRUNWEEK%
+  Client Post Fail		= %POSTFAILWEEK%
+  Server Post Run		= %SERVERPOSTRUNWEEK%
+  Server Post Fail		= %SERVERPOSTFAILWEEK%
+
+  [Day]
+  Time Border			= %TIMEBORDERDAY%
+  Quantity			= %QUANTITYDAY%
+  Include From			= %INCLUDEFROMDAY%
+  Exclude From			= %EXCLUDEFROMDAY%
+  Server Pre Run		= %SERVERPRERUNDAY%
+  Server Pre Fail		= %SERVERPREFAILDAY%
+  Client Pre Run		= %PRERUNDAY%
+  Client Pre Fail		= %PREFAILDAY%
+  Backup Failure Handling	= %BACKUPFAILUREDAY%
+  Client Post Run		= %POSTRUNDAY%
+  Client Post Fail		= %POSTFAILDAY%
+  Server Post Run		= %SERVERPOSTRUNDAY%
+  Server Post Fail		= %SERVERPOSTFAILDAY%
+
+  [Hour]
+  Quantity			= %QUANTITYHOUR%
+  Include From			= %INCLUDEFROMHOUR%
+  Exclude From			= %EXCLUDEFROMHOUR%
+  Server Pre Run		= %SERVERPRERUNHOUR%
+  Server Pre Fail		= %SERVERPREFAILHOUR%
+  Client Pre Run		= %PRERUNHOUR%
+  Client Pre Fail		= %PREFAILHOUR%
+  Backup Failure Handling	= %BACKUPFAILUREHOUR%
+  Client Post Run		= %POSTRUNHOUR%
+  Client Post Fail		= %POSTFAILHOUR%
+  Server Post Run		= %SERVERPOSTRUNHOUR%
+  Server Post Fail		= %SERVERPOSTFAILHOUR%
+
+=head2 C<etc/safirbu/*.job>
+
+  Source			= %SOURCE%
+  Host Name			= %HOSTNAME%
+  IP v46			= %IPV46%
+  Ping Check			= %PINGCHECK%
+  Protect Hardlinks		= %PROTECTHARDLINKS%
+  Nice Client			= %NICECLIENT%
+
+  Destination			= %DESTINATION%
+  Space				= %SPACE%
+  Bin Rsync			= %BINRSYNC%
+
+  Include From			= %INCLUDEFROM%
+  Exclude From			= %EXCLUDEFROM%
+
+  Server Pre Run		= %SERVERPRERUN%
+  Server Pre Fail		= %SERVERPREFAIL%
+  Client Pre Run		= %PRERUN%
+  Client Pre Fail		= %PREFAIL%
+  Backup Failure Handling	= %BACKUPFAILURE%
+  Client Post Run		= %POSTRUN%
+  Client Post Fail		= %POSTFAIL%
+  Server Post Run		= %SERVERPOSTRUN%
+  Server Post Fail		= %SERVERPOSTFAIL%
+
+  [Year]
+  Time Border			= %TIMEBORDERYEAR%
+  Quantity			= %QUANTITYYEAR%
+  Source			= %SOURCEYEAR%
+  Include From			= %INCLUDEFROMYEAR%
+  Exclude From			= %EXCLUDEFROMYEAR%
+  Server Pre Run		= %SERVERPRERUNYEAR%
+  Server Pre Fail		= %SERVERPREFAILYEAR%
+  Client Pre Run		= %PRERUNYEAR%
+  Client Pre Fail		= %PREFAILYEAR%
+  Backup Failure Handling	= %BACKUPFAILUREYEAR%
+  Client Post Run		= %POSTRUNYEAR%
+  Client Post Fail		= %POSTFAILYEAR%
+  Server Post Run		= %SERVERPOSTRUNYEAR%
+  Server Post Fail		= %SERVERPOSTFAILYEAR%
+
+  [Month]
+  Time Border			= %TIMEBORDERMONTH%
+  Quantity			= %QUANTITYMONTH%
+  Source			= %SOURCEMONTH%
+  Include From			= %INCLUDEFROMMONTH%
+  Exclude From			= %EXCLUDEFROMMONTH%
+  Server Pre Run		= %SERVERPRERUNMONTH%
+  Server Pre Fail		= %SERVERPREFAILMONTH%
+  Client Pre Run		= %PRERUNMONTH%
+  Client Pre Fail		= %PREFAILMONTH%
+  Backup Failure Handling	= %BACKUPFAILUREMONTH%
+  Client Post Run		= %POSTRUNMONTH%
+  Client Post Fail		= %POSTFAILMONTH%
+  Server Post Run		= %SERVERPOSTRUNMONTH%
+  Server Post Fail		= %SERVERPOSTFAILMONTH%
+
+  [Week]
+  Time Border			= %TIMEBORDERWEEK%
+  Quantity			= %QUANTITYWEEK%
+  Source			= %SOURCEWEEK%
+  Include From			= %INCLUDEFROMWEEK%
+  Exclude From			= %EXCLUDEFROMWEEK%
+  Server Pre Run		= %SERVERPRERUNWEEK%
+  Server Pre Fail		= %SERVERPREFAILWEEK%
+  Client Pre Run		= %PRERUNWEEK%
+  Client Pre Fail		= %PREFAILWEEK%
+  Backup Failure Handling	= %BACKUPFAILUREWEEK%
+  Client Post Run		= %POSTRUNWEEK%
+  Client Post Fail		= %POSTFAILWEEK%
+  Server Post Run		= %SERVERPOSTRUNWEEK%
+  Server Post Fail		= %SERVERPOSTFAILWEEK%
+
+  [Day]
+  Time Border			= %TIMEBORDERDAY%
+  Quantity			= %QUANTITYDAY%
+  Source			= %SOURCEDAY%
+  Include From			= %INCLUDEFROMDAY%
+  Exclude From			= %EXCLUDEFROMDAY%
+  Server Pre Run		= %SERVERPRERUNDAY%
+  Server Pre Fail		= %SERVERPREFAILDAY%
+  Client Pre Run		= %PRERUNDAY%
+  Client Pre Fail		= %PREFAILDAY%
+  Backup Failure Handling	= %BACKUPFAILUREDAY%
+  Client Post Run		= %POSTRUNDAY%
+  Client Post Fail		= %POSTFAILDAY%
+  Server Post Run		= %SERVERPOSTRUNDAY%
+  Server Post Fail		= %SERVERPOSTFAILDAY%
+
+  [Hour]
+  Quantity			= %QUANTITYHOUR%
+  Source			= %SOURCEHOUR%
+  Include From			= %INCLUDEFROMHOUR%
+  Exclude From			= %EXCLUDEFROMHOUR%
+  Server Pre Run		= %SERVERPRERUNHOUR%
+  Server Pre Fail		= %SERVERPREFAILHOUR%
+  Client Pre Run		= %PRERUNHOUR%
+  Client Pre Fail		= %PREFAILHOUR%
+  Backup Failure Handling	= %BACKUPFAILUREHOUR%
+  Client Post Run		= %POSTRUNHOUR%
+  Client Post Fail		= %POSTFAILHOUR%
+  Server Post Run		= %SERVERPOSTRUNHOUR%
+  Server Post Fail		= %SERVERPOSTFAILHOUR%
+
+=head1 GENERAL
+
+The syntax for these configuration files is a variety of INI configuration files.
+
+Therefore, lines leading with B<#> or B<;> are interpreted as comments and will be ignored. Whitespace between line start and the comment sign are allowed.
+
+Lines starting and ending with square brackets (C<[>, C<]>) create a new section. The alphanumerical text between the brackets is the section name. Any configuration before the first section, is considered to belong to the 'General' or 'Unnamed' section. Sections, whose names contain non-alphanumeric characters, can lead to errors.
+
+If a given value is neither set (including B<not> set to an empty string "") nor inherited, the default values are used.
+
+Any lines, that are not section headers, are expected to be in the following format: The key or name of the option to set, followed by an equal sign (C<=>) and the value enclosed within double quotes ("). This is done according to the following rules: all whitespaces on the left-hand side of the equal sign (C<=>) are ignored entirely. The names or keys are interpreted ignoring case. The values on the right-hand side of the equal sign must be provided enclosed in double quotes (") and its contents are taken as is. Currently, B<no> double quotes are allowed B<within> the value.
+
+These restrictions lead to configuration options that are given as follows:
+
+  Key at the left side = "Value at the right side"
+
+=head1 MAIN CONFIGURATION FILE
+
+The S<main configuration file> (B<S</etc/safirbu/config>>) defines general and default settings that will be inherited by the individual job configurations. Therefore, it is quite similar to the jobs configuration files. Yet, there are the following differences: 
+
+=over 2
+
+=item * Some parameters are only declared in main; these include any binaries except I<rsync>.
+
+=item * C<Destination> is mandatory in main.
+
+=item * S<C<Global Runs>> and C<Global Fails> are respected when configured within the main config, but ignored within job configs.
+
+=item * Settings from the S<main configuration file> will be inherited by the jobs unless explicitly overwritten. Therefore, it is very easy to set up new jobs by just putting the mandatory settings for them into the job's configuration files and use the main configuration defaults without redundancy.
+
+=back
+
+Some parameters can be used multiple times, see L</PARAMETERS> and L</INHERITANCE> for details.
+
+=head2 Mandatory fields
+
+=over 2
+
+=item B<Sections: <unnamed>>
+
+=over 2
+
+=item C<Destination>
+
+=item C<Space>
+
+=back
+
+=back
+
+=over 2
+
+=item B<Sections: Year, Month, Week, Day, and Hour>
+
+=over 2
+
+=item C<Quantity>
+
+=back
+
+=back
+
+=over 2
+
+=item B<Sections: Year, Month, Week, and Day>
+
+=over 2
+
+=item C<Timeborder>
+
+=back
+
+=back
+
+=head1 JOB FILES
+
+Job files (found within B<S</etc/safirbu/jobs>>) give the specific configurations for a single job. They are very similar to the main config file. The most important difference is: "Source" is only expected for job files.
+
+=head2 Mandatory fields
+
+=over 2
+
+=item B<Sections: <unnamed>>
+
+=over 2
+
+=item C<Source>
+
+=back
+
+=back
+
+Some parameters can be used multiple times, see L</PARAMETERS> and L</INHERITANCE> for details.
+
+The parameters are combined across sections in the following sequence:
+
+=over 2
+
+=item 1. Main file unnamed section
+
+Z<>
+
+=item 2. Main file named section
+
+Z<>
+
+=item 3. Job file unnamed section
+
+Z<>
+
+=item 4. Job file named section (sections of the same name only stack between main and job file)
+
+=back
+
+For example, assuming that the array is never reset and the value supplied in all eligible sections, the result will look like the following: 
+
+=over 2
+
+=item MainFileGlobalValue1
+
+=item MainFileGlobalValue2
+
+=item MainFileSectionValue1
+
+=item JobFileGlobalValue1
+
+=item JobFileSectionValue1
+
+=item JobFileSectionValue2
+
+=back
+
+=head1 PARAMETERS
+
+=head2 The following parameters are handled as array lists:
+
+=over 2
+
+=item Source
+
+=item Include From
+
+=item Exclude From
+
+=item Global Pre Run
+
+=item Global Pre Fail
+
+=item Server Pre Run
+
+=item Server Pre Fail
+
+=item Client Pre Run
+
+=item Client Pre Fail
+
+=item Backup Failure Handle
+
+=item Client Post Run
+
+=item Client Post Fail
+
+=item Server Post Run
+
+=item Server Post Fail
+
+=item Global Post Run
+
+=item Global Post Fail
+
+=back
+
+Z<>
+
+=over 2
+
+=item B<C<Destination>>
+
+=over 2
+
+=item Mandatory in S<main configuration file's> <unnamed> section.
+
+=item Only respected in <unnamed> section.
+
+=item Expects an absolute path to a directory for C<%DESTINATION%>.
+
+=item Sets the root directory for job backups and statistics database.
+
+=back
+
+Example: C<"/srv/backups">
+
+=item B<C<Space>>
+
+=over 2
+
+=item Mandatory in S<main configuration file's> <unnamed> section.
+
+=item Only respected in <unnamed> section.
+
+=item Expects an integer or floating point number for %SPACE%.
+
+=item This defines the minimal time interval between creating the backups within a job. The number given is understood as hours and must be S<greater than 0.000275 (≈ 1 second)>.
+
+=back
+
+Default: C<"2.0">
+
+Example: C<"10">
+
+=item B<C<Log Level>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an integer for %LOGLEVEL%.
+
+=item The number given is understood as S<output level>, see S<L</OUTPUT LEVELS>> for further details.
+
+=back
+
+Default: C<"0">
+
+Example: C<"3">
+
+=item B<C<Verbosity Level>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an integer for %VERBOSITY%.
+
+=item The number given is understood as S<output level>, see S<L</OUTPUT LEVELS>> for further details.
+
+=back
+
+Default: C<"0">
+
+Example: C<"2">
+
+=item B<C<Bin Rsync>>
+
+=over 2
+
+=item Only respected in <unnamed> section.
+
+=item Expects an absolute path to the I<rsync> client binary for %BINRSYNC%. (L<rsync(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which rsync
+
+Example: C<"/usr/bin/rsync">
+
+=item B<C<Bin Nice>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an absolute path to the I<nice> binary for %BINNICE%. (L<nice(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which nice
+
+Example: C<"/usr/bin/nice">
+
+=item B<C<Bin IONice>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an absolute path to the I<ionice> binary for %BINIONICE%. (L<ionice(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which ionice
+
+Example: C<"/usr/bin/ionice">
+
+=item B<C<Bin Du>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an absolute path to the I<du> binary for %BINDU%. (L<du(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which du
+
+Example: C<"/usr/bin/du">
+
+=item B<C<Bin Find>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an absolute path to the I<find> binary for %BINFIND%. (L<find(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which find
+
+Example: C<"/usr/bin/find">
+
+=item B<C<Bin Wc>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects an absolute path to the I<wc> binary for %BINWC%. (L<wc(1)>)
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Default: Whatever was returned for
+
+  which wc
+
+Example: C<"/usr/bin/wc">
+
+=item B<C<Nice Server>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects a boolean value for %NICESERVER%.
+
+=over 4
+
+=item Values considered as TRUE are: "TRUE", "true", "1"
+
+=item Values considered as FALSE are: "0", ""
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item Check out the C<-N>|C<--nice-server> switch of L<safirbu(8)> for further details.
+
+=back
+
+Default: C<"0">
+
+Example1: C<"true">
+
+Example2: C<"">
+
+=item B<C<Nice Client>>
+
+=over 2
+
+=item Only respected in <unnamed> section. (TODO: Where?)
+
+=item Expects a boolean value for %NICECLIENT%.
+
+=over 4
+
+=item Values considered as TRUE are: "TRUE", "true", "1"
+
+=item Values considered as FALSE are: "0", ""
+
+=back
+
+=item The given value will be used on the server and the client, depending on wheither the client is I<localhost> or a remote host.
+
+=item Check out the C<-n>|C<--nice-client> switch of L<safirbu(8)> for further details.
+
+=back
+
+Default: C<"0">
+
+Example1: C<"true">
+
+Example2: C<"">
+
+=item B<C<Global Pre Run>>
+
+=item B<C<Global Pre Fail>>
+
+=item B<C<Global Post Run>>
+
+=item B<C<Global Post Fail>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<main configuration file>.
+
+=item Expects a shell command, path to an executable or a path to an executable shell script for:
+
+=over 4
+
+=item %GLOBALPRERUN%
+
+=item %GLOBALPREFAIL%
+
+=item %GLOBALPOSTRUN%
+
+=item %GLOBALPOSTFAIL%
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Example1: C<"/root/bin/decrypt.sh backupdrive">
+
+Example2: C<"/bin/mount -o noatime /dev/mapper/backup1 /srv/backups">
+
+=item B<C<Source>>
+
+=over 2
+
+=item Mandatory in the following S<job configuration files'> sections, but at least in the <unnamed> section:
+
+=over 4
+
+=item <unnamed>
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Only respected in S<job configuration files>.
+
+=item Expects an absolute path or a S<rsync daemon module name> on the client to backup for:
+
+=over 4
+
+=item %SOURCE%
+
+=item %SOURCEYEAR
+
+=item %SOURCEMONTH%
+
+=item %SOURCEWEEK%
+
+=item %SOURCEDAY%
+
+=item %SOURCEHOUR%
+
+=back
+
+=item The given value will only be used on the client, that I<safirbu> is backing up.
+
+=item Each given source, other than "/", will create a sub-folder within the job's backup folder, e.g. S<C<%DESTINATION%/jobname/20250412.../%SOURCE%>>.
+
+=item Warning: This can become highly complex when used in different compositions, mixed with include, and exclude files.
+
+=back
+
+Example1: C<"/">
+
+Example2: C<"/srv/smbshare">
+
+Example3: C<"rsyncmodule:">
+
+=item B<C<Host Name>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<job configuration files>.
+
+=item Expects a string, preferrably FQDN of the client for %HOSTNAME%.
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Example: C<"myhost">
+
+=item B<C<IP v46>>
+
+=over 2
+
+=item Only respected in <unnamed> section of the S<job configuration files>.
+
+=item Expects an IPv4 B<or> IPv6 address of the client for %IPV46%.
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=back
+
+Example: C<"192.168.1.5">
+
+=item B<C<Ping Check>>
+
+=item B<C<Protect Hardlinkgs>>
+
+=over 2
+
+=item Only respected in <unnamed> section of both main and job configuration files.
+
+=item Expects a boolean value for %PINGCHECK% and %PROTECTHARDLINKS%.
+
+=over 4
+
+=item Values considered as TRUE are: "TRUE", "true", "1"
+
+=item Values considered as FALSE are: "0", ""
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item For details on these settings see S<L</PING CHECK>> and S<L</PROTECT HARDLINKS>>, respectively.
+
+=back
+
+Default: C<"true">
+
+Example1: C<"true">
+
+Example2: C<"">
+
+=item B<C<Quantity>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Expects an integer ≥0 for:
+
+=over 4
+
+=item %QUANTITYYEAR%
+
+=item %QUANTITYMONTH%
+
+=item %QUANTITYWEEK%
+
+=item %QUANTITYDAY%
+
+=item %QUANTITYHOUR%
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item This number declares how many backups of this backup type shall be kept until the oldest gets deleted. A type can be distinguished through the last character of the folder's name, respectively Y, M, W, D, or H.
+
+=item If the value is C<"0"> no backups of this type will be created. The next bigger unit will be used, i.e. Y -> M -> W -> D -> H, unless already done: In this case it falls back to an hourly backup.
+
+=item If an age-based deletion is required, S<C<Server Pre Run>> or S<C<Server Post Run>> can be used to implement such a mechanism.
+
+=back
+
+Defaults: C<Year:="3">, C<Month:="12">, C<Week:="4">, C<Day:="7">, C<Hour:="0">
+
+Example: C<"5">
+
+=item B<C<Time Border>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=back
+
+=item Expects a partial time stamp. See S<L</PARTIAL TIME STAMP>>.
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item The example is for the yearly backup and resolves to: S<3:45 PM at 30th of November,> of the B<server's time zone>.
+
+=back
+
+Defaults: C<Year:="01-01-0000h">, C<Month:="01-0000h">, C<Week:="5-0000h">, C<Day:="0000h">
+
+Example: C<"11-30-1545h">
+
+=item B<C<Include From>>
+
+=item B<C<Exclude From>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item <unnamed>
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Expects an absolute path to a text file which can be used by L<rsync(1)> for C<--include-from>|C<--exclude-from> for:
+
+=over 4
+
+=item %INCLUDEFROM%
+
+=item %EXCLUDEFROM%
+
+=item %INCLUDEFROMYEAR%
+
+=item %EXCLUDEFROMYEAR%
+
+=item %INCLUDEFROMMONTH%
+
+=item %EXCLUDEFROMMONTH%
+
+=item %INCLUDEFROMWEEK%
+
+=item %EXCLUDEFROMWEEK%
+
+=item %INCLUDEFROMDAY%
+
+=item %EXCLUDEFROMDAY%
+
+=item %INCLUDEFROMHOUR%
+
+=item %EXCLUDEFROMHOUR%
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item B<Note:> It is not required to list any files located at etc/safirbu/excludes having the same name as the job. These are added automatically.
+
+=back
+
+Example: C<"/etc/safirbu/excludes/GlobalExcludes">
+
+=item B<C<Backup Failure Handling>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item <unnamed>
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Expects a pre-defined string for:
+
+=over 4
+
+=item %BACKUPFAILURE%
+
+=item %BACKUPFAILUREYEAR%
+
+=item %BACKUPFAILUREMONTH%
+
+=item %BACKUPFAILUREWEEK%
+
+=item %BACKUPFAILUREDAY%
+
+=item %BACKUPFAILUREHOUR%
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on. But it may affect Runs on the client, as well.
+
+=item Expects a pre-defined string. See S<L</BACKUP FAILURE HANDLING>>.
+
+=back
+
+Default: C<"stop">
+
+Example: C<"fail">
+
+=item B<C<Server Pre Run>>
+
+=item B<C<Server Pre Fail>>
+
+=item B<C<Server Post Run>>
+
+=item B<C<Server Post Fail>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item <unnamed>
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Expects a shell command, path to an executable or a path to an executable shell script for:
+
+=over 4
+
+=item %SERVERPRERUN%
+
+=item %SERVERPREFAIL%
+
+=item %SERVERPOSTRUN%
+
+=item %SERVERPOSTFAIL%
+
+=item %SERVERPRERUNYEAR%
+
+=item %SERVERPREFAILYEAR%
+
+=item %SERVERPOSTRUNYEAR%
+
+=item %SERVERPOSTFAILYEAR%
+
+=item %SERVERPRERUNMONTH%
+
+=item %SERVERPREFAILMONTH%
+
+=item %SERVERPOSTRUNMONTH%
+
+=item %SERVERPOSTFAILMONTH%
+
+=item %SERVERPRERUNWEEK%
+
+=item %SERVERPREFAILWEEK%
+
+=item %SERVERPOSTRUNWEEK%
+
+=item %SERVERPOSTFAILWEEK%
+
+=item %SERVERPRERUNDAY%
+
+=item %SERVERPREFAILDAY%
+
+=item %SERVERPOSTRUNDAY%
+
+=item %SERVERPOSTFAILDAY%
+
+=item %SERVERPRERUNHOUR%
+
+=item %SERVERPREFAILHOUR%
+
+=item %SERVERPOSTRUNHOUR%
+
+=item %SERVERPOSTFAILHOUR%
+
+=back
+
+=item The given value will only be used on the server, that I<safirbu> is running on.
+
+=item Placeholder can be used to dynamically change the given value according to the current job, backup, or hardlink. (Multiple placeholders may be used in the same value.)
+
+=back
+
+Example: C<"/root/bin/somethingToDo.sh %JOB% %PATH%">
+
+=item B<C<Client Pre Run>>
+
+=item B<C<Client Pre Fail>>
+
+=item B<C<Client Post Run>>
+
+=item B<C<Client Post Fail>>
+
+=over 2
+
+=item Only respected in the following sections:
+
+=over 4
+
+=item <unnamed>
+
+=item Year
+
+=item Month
+
+=item Week
+
+=item Day
+
+=item Hour
+
+=back
+
+=item Expects a shell command, path to an executable or a path to an executable shell script for:
+
+=over 4
+
+=item %PRERUN%
+
+=item %PREFAIL%
+
+=item %POSTRUN%
+
+=item %POSTFAIL%
+
+=item %PRERUNYEAR%
+
+=item %PREFAILYEAR%
+
+=item %POSTRUNYEAR%
+
+=item %POSTFAILYEAR%
+
+=item %PRERUNMONTH%
+
+=item %PREFAILMONTH%
+
+=item %POSTRUNMONTH%
+
+=item %POSTFAILMONTH%
+
+=item %PRERUNWEEK%
+
+=item %PREFAILWEEK%
+
+=item %POSTRUNWEEK%
+
+=item %POSTFAILWEEK%
+
+=item %PRERUNDAY%
+
+=item %PREFAILDAY%
+
+=item %POSTRUNDAY%
+
+=item %POSTFAILDAY%
+
+=item %PRERUNHOUR%
+
+=item %PREFAILHOUR%
+
+=item %POSTRUNHOUR%
+
+=item %POSTFAILHOUR%
+
+=back
+
+=item The given value will only be used on the client, that I<safirbu> is backing up.
+
+=item Placeholders can be used to dynamically change the given value according to the current job, backup, or hardlink. (Multiple may be used at in same value.)
+
+=back
+
+Example for S<Client Pre Run>: C<"/root/bin/dumpDatabase.sh">
+
+Example for S<Client Post Run>: C<"/root/bin/deleteDatabaseDumps.sh">
+
+=back
+
+=head1 PLACEHOLDERS
+
+These are keys only used for the job to run. They represent special wildcards that are replaced with their corresponding values when used as arguments for the commands used in the custom commands.
+
+B<Take care: Although some placeholder keys may sound like values of L</PARAMETERS>, these are no values. These placeholders are used within the C<Run>s to be replaced just before execution.>
+
+=over 2
+
+=item C<%JOB%> is replaced with the corresponding job name. Only set for backups.
+
+e.g. C<myjob>
+
+Z<>
+
+=item C<%DESTINATION%> is replaced with the base backup path. Only set for backups.
+
+e.g. C</run/safirbu/backup/myjob>
+
+Z<>
+
+=item C<%PATH%> is replaced with the full backup path. Only set for backups.
+
+e.g. C</run/safirbu/backup/myjob/myjob_2024-03-25T20:50:00D>
+
+Z<>
+
+=item C<%LAST%> is replaced with the full backup path of the previous backup, which is used to create hard links.
+
+e.g. C</run/safirbu/backup/myjob/myjob_2024-03-22T20:00:01W>
+
+=back
+
+=head1 GLOBAL RUNS
+
+If any of the S<Global Pre Run> fails, B<NO> backup job will start at all. This includes executing any Pre commands.
+
+Global Runs, like S<B<Global Pre Run>> and B<S<Global Post Run>> play nice together. As their name suggests, they are run globally, instead of a per job basis. Therefore, even if a long-running job is running already, one can start another job in parallel. An upcoming S<B<Global Pre Run>> will detect if another S<B<Global Pre Run>> was executed already and not re-execute it. On the other hand, the S<B<Global Post Run>> will detect if it's the last one to run. If it is the last one, it executes its given tasks, otherwise it will just exit without doing so and leave this task for the next B<S<Global Post Run>> to check and decide. 
+
+The long way short: This is something one does not not have to think of, usually.
+
+=head1 SERVER RUNS and CLIENT RUNS
+
+Within a job if B<ANY> Pre-|PostRun fails, and the S<C<Backup Failure Handling>> is set to C<fail>, the corresponding Pre-|PostFail runs.
+If the error occurs within any of the PreRuns, B<no> backup will be run. The whole job will be considered I<failed> in this case, i.e. if any PreRun results in an error.
+
+A redirect must never be placed in a Run value! This includes arguments like the following: C<< > >>, C<<< >> >>>, C<< 1>&2 >>, S<< C<< >/dev/null 2>&1 >> >>.
+By default, a redirect to the current backup log is applied. The log can be accessed by using the L</PLACEHOLDERS>' C<%PATH%>: C<%PATH%.log> .
+
+=head1 PARTIAL TIME STAMP
+
+# WORK
+The time stamps, set in S<C<Time Border>>, declare when a certain type of backup should be made. The backup is then made as this type for 24 hours from the point in time to which the setting belongs.
+If this type of backup has already been made during this period, an I<hourly> backup is created. Sometimes the settings also overlap with the I<daily> backups, in which case a I<daly> backup is created first and then an I<hourly> backup. This only applies to scenarios in which backups are made several times a day.
+
+Terminology:
+
+=over 2
+
+=item MM	=> two digits for month, S<from 01 to 12.>
+
+=item DD	=> two digits for day of month, S<from 01 to 31.>
+
+=item D	=> one digit for day of week, S<from 0 to 7. (0 ≙ 7 ≙ Sunday)>
+
+=item HH	=> two digits for the hour, S<from 00 to 23.>
+
+=item mm	=> two digits for the minute, S<from 00 to 59.>
+
+=item -	=> literal dash.
+
+=item h	=> literal character h.
+
+=back
+
+Z<>
+
+=over 2
+
+=item The declaration string for I<yearly> backups is C<MM-DD-HHmmh>.
+
+Example: C<01-01-0000h>
+
+Reads: January, 1st, 12 o'clock AM
+
+=item The declaration string for I<monthly> backups is C<DD-HHmmh>.
+
+Example: C<01-0000h>
+
+Reads: 1st of month, 12 o'clock AM
+
+=item The declaration string for I<weekly> backups is C<D-HHmmh>.
+
+Example: C<5-0000h>
+
+Reads: Friday, 12 o'clock AM
+
+=item The declaration string for I<daily> backups is C<HHmmh>.
+
+Example: C<0000h>
+
+Reads: 12 o'clock AM
+
+=back
+
+=head1 BACKUP FAILURE HANDLING
+
+If any S<B<Pre Run>s> or S<B<Post Run>s> fail, their corresponding S<B<Pre Fail>> or S<B<Post Fail>> is run. If the error occurs in B<Pre>, all following tasks - including the backup - will not be started. However: If the error occurs within the actual backup itself, there is no command like the aforementioned S<B<Pre-|Post Fail>> that can be set. Rather than an command, there are different instructions available on how to proceed in case of a backup error. The available options consist of the following:
+
+=over 2
+
+=item * B<fail>
+
+Similar to continue, but continues on S<B<Client Post Fail>> and S<B<Server Post Fail>> (I<BOTH!!>).
+
+=item * B<continue>
+
+This will mark the backup as failed, but continue with the S<B<Post Run>s> as if it was successful. This affects only the hard linking for the next backup: Successful backups will be preferred over failed ones.
+
+=item * B<stop>
+
+The failed job is aborted immediately, i.e. none of the S<B<Post>> commands are executed. Instead, safirbu will immediately continue with the next job (if present) or the S<B<Global Post Run>>.
+This is the default behavior.
+
+=begin comment
+
+=item * B<rollback>
+
+This removes the failed backup and B<stop>s then.
+
+=end comment
+
+=item * B<retry>
+
+As the name suggests, it will retry the backup using the same configurations as before. This retry will only be tried if a new attempt is considered sensible. This depends on the error code that B<rsync> returned. For example, if rsync could not execute the backup because the target directory's file system is out of space, a second backup attempt will run into the exact same problem. Therefore, no B<retry> is attempted, but it will rather B<stop>.
+On the other hand, if the error code signifies a problem, which may no longer be present at a new attempt - for example a connection to a host timed out - safirbu will wait and then start a new attempt. There is no limit to the number of times that it can try again, so this loop may continue indefinitely.
+If any of the subsequent retries succeeds, it will execute any of the following commands as if there was no retry necessary in the first place. Therefore, even after multiple failed backup attempts, the S<B<Post Run>s> are executed instead of any of the S<B<Post Fail>> commands.
+
+The waiting time between the individual retries depends on the number of failed attempts. It starts with 300 seconds, i.e. 5 minutes, between for the second retry. Each additional failed attempt, the waiting time is increased by x1.5 times, so the third retry will only be started after 450 seconds. This is done to a maximum waiting time of one hour between attempts, after which the interval will no longer increase.
+
+B<Attention:> If there are multiple jobs, jobs with C<retry> behaviour can hold up subsequent tasks (sizing) and jobs.
+The re-execution of such a job will also be cancelled as soon as it is recognised that an instance of this job is already running. Such jobs may have to be cancelled manually. See L<ps(1)> and L<kill(1)>.
+
+=item * Combinations
+
+=over 2
+
+=over 2
+
+=item * B<retry> and B<continue>
+
+This combination will display a behavior that is mostly the same as if only the B<retry> option was given. Yet, there is one major difference. Instead of continuing the retry cycle indefinitely, the attempts will stop after the maximum waiting period of 1 hour was reached and a final retry made. After that, the B<continue> option will take over instead.
+
+If every attempt up to this point has failed, 3h41" will have passed when it continues.
+
+See at L</continue> what will happen after retrying stopped.
+
+=begin comment
+
+=item *  B<retry> and B<fail>
+
+This is an alias for B<retry>, but has an interesting flaw: It won't run infinitely, but stop retrying if the longest wait period (1h) was reached and waited one time.
+
+If every attempt up to this point has failed, 3h41" will have passed when it continues.
+
+This forces a failed backup to follow the B<fail>ed path.
+This also applies if the B<retry> succeeded.
+Just when B<retry> was called is enough to run B<only> B<fail>ed paths.
+Documents a successful retry as successful backup while S<Post Fail> is executed.
+
+=end comment
+
+=begin comment
+
+=item * B<rollback> and B<retry>
+
+Will rollback the failed backup and restart. (S<B<Pre Run>s> will I<not> be ran again!)
+
+=item * B<rollback> and B<continue>
+
+Almost like B<continue> alone, but leaving not even a broken backup back. Might not affect the hardlink chain, but one won't have even a partial backup this way.
+
+=item * B<rollback> and B<fail>
+
+Like rollback, but instead of B<stop>ping it will continue on S<B<Post Fail>s>.
+
+=end comment
+
+=back
+
+=back
+
+=back
+
+=head1 OUTPUT LEVELS
+
+Output is made according to the setting in configuration S<C<Log Level>>|S<C<Verbosity Level>> or on the command line options for C<--verbose>|C<--loglevel> (L<safirbu(8)>). For the logs, the following levels are available:
+
+Note: Smaller values are included in higher values, e.g. log level 2 (WARN) includes 0 (FATAL), and 1 (ERROR) as well, while 3 (INFO) includes 0, 1, and 2, and so on.
+
+=over 4
+
+=item B<0 FATAL>
+
+Failures, leading to exceptions, program, backup or at least function interruptions. These errors are not recoverable, mostly stopping I<safirbu>.
+Reported to STDERR and log by default.
+
+=item B<1 ERROR>
+
+Failures, which interrupt a part of the procedure. They can usually be recovered from, maybe skipping the failing part and continuing with the next step.
+Reported to STDERR and log by default.
+
+=item B<2 WARN>
+
+Non-critical errors. These include, for example, unmet expectations or possible problems for the following tasks. Warnings should be avoided, especially if related to configuration.
+Reported to STDERR and log by default.
+
+=item B<3 INFO>
+
+Decisions taken or information that is good to know, in case something unexpected happened.
+Reported to log by default.
+If verbose is set to 3 or higher, it reports to STDOUT.
+
+=item B<4 DEBUG>
+
+Data, returned by functions, dumps of objects and other things. This log level is employed to gain further insights into the inner workings of the program, which can come in handy if an objects behaves unexpectedly.
+This increases the line introduction for all outputs to full detail.
+Not reported by default.
+If verbose is set to 4 or higher, it reports to STDOUT.
+
+=item B<5 TRACE>
+
+Each function called, the parameters provided to methods, each step, and much more are reported. B<CREATES HUGE AMOUNTS OF LOG OUTPUT. Take care!> Usually this level of detail is not needed. Using this persistently is not a good idea due to the sheer amount of log output eating up the disk space and burying the important messages.
+This increases the line introduction for all outputs to full detail.
+Not reporting by default.
+If verbose is set to 5 or higher, it reports to STDOUT.
+
+=item B<≥6 ALL>
+
+Mostly the same as S<L</5 TRACE>>, but may include even more information than TRACE did.
+
+=back
+
+=head1 PING CHECK
+
+If a job is not run on localhost, before any connection attempts are made, a ping is sent to the host. This is done to see if a pong returns to determine whether the server is online. Due to firewall restrictions, a host may not respond with a pong and the will backup fail, even though the client is actually ready to accept I<ssh> or I<rsync>. Set to C<"0"> (FALSE) to omit this check. Activated by default.
+
+=head1 PROTECT HARDLINKS
+
+Only interesting for backups with a very small number of backups to keep.
+
+The default behaviour is to keep a backup, that is also the hardlink target, until after the backup, even if it should be deleted. This is done to reduce IO and network bandwidth. The deletion - usually happening before the backup - is delayed until after the backup, similar to the C<--fast> switch (L<safirbu(8)>). There are some cases, where these benefits cannot come into play. For example, consider there being only a low number of backups, which individually already take up a lot of storage space, and an almost S<100 %> change rate between each backup. In this scenario, the downsides (running out of space and no benefit of reduced IO for already transferred files) outweigh the usual advantages by far. Set to C<"0"> (FALSE) to force I<safirbu> to keep the cleanup cycle before the backup anyway, leading to a full backup without a hard link target. Activated by default.
+
+=head1 SIZING
+
+Sizing happens, according to the locations given. Each S<source combination> gets its own sizing block.
+
+=head2 DETAILS ACCORDING TO EXAMPLE FILES ABOVE
+
+=head3 F<my1st>
+
+=head4 Creates two sizing blocks for listing:
+
+=over 2
+
+=item B</>
+
+This is the source setting of the C<[Year]> section.
+
+=item B</data> + B</var/lib/pgsql/backup>
+
+This source setting applies to all other sections. However, any backup containing both source paths will be used for sizing.
+
+=back
+
+=head3 F<my2nd>
+
+=head4 Creates only one sizing for listing:
+
+=over 2
+
+=item B</>
+
+This is the only source setting, applying to all sections.
+
+=back
+
+=head1 DESTINATION
+
+While one may store their backup wherever one wants, it is recommended to use external devices or at least separate hard drives, configured as RAID as it's best. So the declaration on I<Destination> should be the mount point of these. If you have only temporary mounts, e.g. by the S<I<Global Pre Run>> maybe it is a good idea to use I</run/safirbu/backup> instead.
+
+=head1 INHERITANCE
+
+=over 2
+
+=item B<Single value parameters>
+
+Settings like C<Source> or C<Destination> (and many others) are inherited top to bottom. Array-like settings, like C<Run> parameters, are compounded unless an empty value was assigned which would reset the array to an empty list.
+
+For example, the destination was only set within the S<main configuration file>'s <unnamed> section, the inheritance sequence for a daily backup's C<Destination> would be:
+
+=over 2
+
+=item C<< main.<unnamed>.destination> >> is inherited by the empty C<< job.<unnamed>.destination >>
+
+=back
+
+The day backup will use the C<< main.<unnamed>.destination >> destination unless something is written within the C<< job.<unnamed>.destination >>. This would overwrite the setting from the main file. I<The last occurrence of S<single value parameters> overwrite all former appearances.>
+
+=item B<Array-like parameters>
+
+An example for an array-like parameter, assuming all have set a not-null value:
+
+=over 2
+
+=item C<< main.<unnamed>.excludefrom >> is inherited by C<< main.day.excludefrom >> and appends its values to the end of the list.
+
+=item C<< main.day.excludefrom >> is inherited by C<< job.<unnamed>.excludefrom >> and appends its values to the end of the list.
+
+=item C<< job.<unnamed>.excludefrom >> is inherited by C<< job.day.excludefrom >> and appends its values to the end of the list.
+
+=back
+
+In the end, it is holding all four exclude files.
+
+=item B<Overwriting array-like parameters>
+
+Look back at the previous example, but now let's assume C<< job.<unnamed>.excludefrom >> appears I<two times>: The B<first> one is set to C<"">, representing I<NULL>, the B<second> one was unchanged and points to a file as before. The inheritance now changes:
+
+=over 2
+
+=item C<< main.<unnamed>.excludefrom >> is inherited by C<< main.day.excludefrom >> and appends its values to the end of the list.
+
+=item C<< main.day.excludefrom >> is inherited by the B<first> occurrence of C<< job.<unnamed>.excludefrom >> but because of the C<I<NULL>> value it holds, it does B<not> add to the list, but B<EMPTIES> the list.
+
+=item The B<second> occurrence of C<< job.<unnamed>.excludefrom >> inherits an I<empty> list and appends its value to it.
+
+=item C<< job.<unnamed>.excludefrom >> is inherited by C<< job.day.excludefrom >> and appends its values to the end of the list.
+
+=back
+
+In this example, in the end only holding the exclude files from the B<second> C<< job.<unnamed>.excludefrom >> and C<< job.day.excludefrom >>.
+
+=item B<Sequence>
+
+Especially important for C<Run> and C<Fail> commands is: B<the sequence is kept>. According to the first array-like example, a S<C<Server Pre Run>> would be executed in the following order if set everywhere to a not-null value and none of the commands fail:
+
+=over 2
+
+=item 1. C<< main.<unnamed>.serverprerun >>
+
+=item 2. C<< main.day.serverprerun >>
+
+=item 3. C<< job.<unnamed>.serverprerun >>
+
+=item 4. C<< job.day.serverprerun >>
+
+=back
+
+Multiple occurrences of the same parameter within the S<B<same section>> behave like from different sections, i.e. they are all appended to the list in the order that they are specified, and sequence top to bottom.
+
+=back
+
+See L</EXAMPLES> for more elaborated examples.
+
+=head1 EXAMPLES
+
+=head2 FILES
+
+=head3 F<S</etc/safirbu/config>>
+
+ Destination		= "/var/lib/safirbu/backup"
+ Space			= "2"
+ Global Pre Run		= "/usr/local/sbin/mount-backup-drive.sh"
+ Global Post Run	= "/usr/local/sbin/eject-backup-drive.sh"
+
+ [Year]
+ Time Border		= "01-01-0000h"
+ Quantity		= "3"
+
+ [Month]
+ Time Border		= "01-0000h"
+ Quantity		= "12"
+
+ [Week]
+ Time Border		= "5"
+ Quantity		= "4"
+
+ [Day]
+ Time Border		= "0000h"
+ Quantity		= "7"
+
+ [Hour]
+ Quantity		= "0"
+
+=head3 F</etc/safirbu/jobs/my1st.job>
+
+ Source			= "/data"
+ Source			= "/var/lib/pgsql/backup"
+ Client Pre Run		= "/root/bin/dump-main-pgdb.sh"
+ Client Post Run	= "/root/bin/clear-pgdump.sh"
+
+ [Year]
+ Source			= ""
+ Source			= "/"
+ Exclude From		= "/etc/safirbu/excludes/OurLinuxDefaults"
+ Client Pre Run		= ""
+ Client Pre Run		= "/root/bin/dump-all-pgdb.sh"
+ Time Border		= "12-31-1800h"
+
+ [Month]
+ Client Pre Run		= "/root/bin/dump-frequent-pgdb.sh"
+
+=head3 F</etc/safirbu/jobs/my2nd.job>
+
+ Source			= "/"
+ Exclude From		= "/etc/safirbu/excludes/OurLinuxDefaults"
+
+ [Year]
+ Server Pre Run		= "/root/bin/disable-excludes.sh"
+ Server Post Run	= "/root/bin/enable-excludes.sh"
+
+=begin comment
+
+# WORK BECKY Bis hier haben wir Englisch "neu" übersetzt.
+
+=end comment
+
+=head2 EXPLANATION OF EXAMPLE FILES
+
+=head3 F<General>
+
+=over 2
+
+=item * All backup jobs will be created within B</var/lib/safirbu/backup> (I<Destination>).
+
+=item * Between backups within the same job must be at least B<2> (I<Space>) hours.
+
+=item * Before starting any job(s) B<mount-backup-drive.sh> (I<S<Global Pre Run>>) will be executed.
+
+=item * If all jobs finished, B<eject-backup-drive.sh> (I<S<Global Post Run>>) will be executed.
+
+=item * Yearly backups will be the first backup after B<S<January 1st, 12 AM>> (S<I<Year.Time Border>>).
+
+=item * The fourth yearly backup will be deleted. (B<Three> (I<Year.Quantity>) will be kept.)
+
+=item * Monthly backups will be the first backup after the B<S<first of any month at 12 AM>> (I<S<Month.Time Border>>).
+
+=item * The 13th monthly backup will be deleted. (B<Twelve> (I<Month.Quantity>) will be kept.)
+
+=item * Daily backups will be the first backup after B<S<12 AM>> (I<S<Day.Time Border>>).
+
+=item * The eighth daily backup will be deleted. (B<Seven> (I<Day.Quantity>) will be kept.)
+
+=item * Any additional backup would be an hourly backup, but because of B<0> (I<S<Hour.Quantity>>) it is disabled and a backup where the first rule from above applies will be created.
+
+=back
+
+=head3 F<my1st>
+
+=over 2
+
+=item * Source is B</data> and B</var/lib/pgsql/backup> (I<Source>).
+
+=item * Before the backup B</root/bin/dump-main-pgdb.sh> (I<S<Client Pre Run>>) will be run on client side.
+
+=item * After the backup B</root/bin/clear-pgdump.sh> (I<S<Client Post Run>>) will be run on client side.
+
+=item * Yearly backup will be made from B</> (I<Year.Source>) - The first I<Year.Source> (B<"">) drops B</data> and B</var/lib/pgsql/backup>, the following I<Year.Source> (B</>) sets it again.
+
+Take care! If you added B</var/lib/pgsql> to your exclude list, but B</var/lib/pgsql/backup> not to the include list, the PostgreSQL dumps will not be backed up at the yearly backup!
+
+=item * Yearly backup will also check for the given file B</etc/safirbu/excludes/OurLinuxDefaults> (I<Year.Exclude From>) and also use this file in addition to the default B</etc/safirbu/excludes/my1st> if existing. (Default uses the job name. More details at chapter S<L</DIRECTORIES AND FILES>>.)
+
+=item * Before the backup B</root/bin/dump-all-pgdb.sh> (I<S<Year.Client Pre Run>>) will be run on client side. Same override mechanism as for I<Year.Source>.
+
+=item * Yearly backups will be the first backup after B<S<December 31st 6:00 PM>> (S<I<Year.Time Border>>). It has overwritten the main configuration setting of B<S<January 1st 12 AM>>.
+
+=item * For monthly backups, before the backup, there will be B</root/bin/dump-main-pgdb.sh> and B</root/bin/dump-frequent-pgdb.sh> (I<S<Client Pre Run>> and I<S<Month.Client Pre Run>>) run on the client side.
+
+=back
+
+=head3 F<my2nd>
+
+=over 2
+
+=item * Source is B</> (I<Source>).
+
+=item * Will also check for the given file B</etc/safirbu/excludes/OurLinuxDefaults> (I<Exclude From>) and also use this file in addition to the default B</etc/safirbu/excludes/my2nd> if existing. (Default uses the job name. More details at chapter S<L</DIRECTORIES AND FILES>>.)
+
+=item * Before the yearly backup, B</root/bin/disable-excludes.sh> (I<S<Year.Client Pre Run>>) will be run on server side.
+
+=item * After the yearly backup, B<root/bin/enable-excludes.sh> (I<S<Year.Client Post Run>>) will be run on server side.
+
+=back
+
+=head3 HINTS
+
+=over 2
+
+=item * If a day of month is specified that exceeds the last day of its given month, it will fall back to the last day of month. For example, S<B<02-31-1400h>> will be interpreted as February 28th/29th 2:00 PM.
+
+=item * Time is local: It depends on the I<SERVER>'s locale configuration (on systemd *NIX systems, usually S</etc/localtime>).
+
+=back
+
+=head1 DIRECTORIES AND FILES
+
+=over 2
+
+=item B<Linux:	C</etc/safirbu>>
+
+=item B<FreeBSD:	C</usr/local/etc/safirbu>>
+
+Main configuration directory for the configuration files.
+
+=item B<Linux:	C</etc/safirbu/config>>
+
+=item B<FreeBSD:	C</usr/local/etc/safirbu/config>>
+
+Main configuration file. Must exist and be filled with mandatory settings. Check backup if you lose it. ;-)
+
+=item B<Linux:	C</etc/safirbu/excludes>			AND C</etc/safirbu/includes>>
+
+=item B<FreeBSD:	C</usr/local/etc/safirbu/excludes>	AND C</usr/local/etc/safirbu/includes> >
+
+Holds files for B<--exclude-from> and B<--include-from> for rsync. The includes will appear before the excludes for rsync. Files must be named like the job without any suffix. E.g. running C<S<safirbu backup my1st>> from B</etc/safirbu/jobs/my1st.job> will search for B</etc/safirbu/{includes,excludes}/my1st> and hand these over to rsync.
+
+=item B<Linux:	C</etc/safirbu/jobs>				AND C</etc/safirbu/jobs/*.job>>
+
+=item B<FreeBSD:	C</usr/local/etc/safirbu/jobs>		AND C</usr/local/etc/safirbu/jobs/*.job>>
+
+Default search path for safirbu's jobs. Holds simple ini-like text files suffixed ".job", ".conf", ".cfg", ".config" or ".configuration".
+
+=back
+
+=head1 SEE ALSO
+
+L<safirbu(8)>
+
+=head1 THANKS
+
+Special thanks go out to: Rebecca-Victoria Schmidt who checked any English I wrote.
+
+=head1 AUTHOR
+
+Safirbu is written by Dominik Bernhardt, inspired by Linux In a Nutshell (O'Reilly).
+
+=cut
+

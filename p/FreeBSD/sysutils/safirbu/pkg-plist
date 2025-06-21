@@ -1,0 +1,19 @@
+@sample %%ETCDIR%%/config.sample
+@sample etc/logrotate.d/safirbu.sample
+etc/bash_completion.d/safirbu
+sbin/safirbu
+share/man/man5/safirbu-config.5.gz
+share/man/man8/safirbu.8.gz
+share/safirbu/Infrastructure.sql
+share/safirbu/template.job
+share/licenses/safirbu/LICENCE.md
+@dir etc/safirbu/excludes
+@dir etc/safirbu/includes
+@dir etc/safirbu/jobs
+@dir etc/safirbu/
+@dir /var/spool/lock/safirbu.d
+@dir /var/lib/safirbu/backup
+@dir /var/lib/safirbu/
+@dir /var/log/safirbu/jobs
+@dir /var/log/safirbu/
+

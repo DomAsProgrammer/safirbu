@@ -1,0 +1,129 @@
+## (Lines starting with an # are treated as comments.)
+
+# Source path, path or colon-prefixxed rsync module
+Source			= %SOURCE%
+# Should be FQDN, but can be used to have different job name and
+# host name (no host name and no IP address ⇒ uses job name as
+# host name)
+Host Name		= %HOSTNAME%
+IP v46			= %IPV46%
+Ping Check		= %PINGCHECK%
+Protect Hardlinks	= %PROTECTHARDLINKS%
+
+Destination		= %DESTINATION%
+Space			= %SPACE%
+Bin Rsync		= %BINRSYNC%
+
+# Includes and excludes
+# /etc/safirbu/jobs/{include,exclude}s/<job name> will be
+# searched and used if found. The following settings
+# is to add files for this setting which are not following the
+# standard naming. Includes will appear first for rsync.
+Include From		= %INCLUDEFROM%
+Exclude From		= %EXCLUDEFROM%
+
+# Appending
+Server Pre Run		= %SERVERPRERUN%
+Server Pre Fail		= %SERVERPREFAIL%
+Client Pre Run		= %PRERUN%
+Client Pre Fail		= %PREFAIL%
+Backup Failure Handling	= %BACKUPFAILURE%
+Client Post Run		= %POSTRUN%
+Client Post Fail	= %POSTFAIL%
+Server Post Run		= %SERVERPOSTRUN%
+Server Post Fail	= %SERVERPOSTFAIL%
+
+[Year]
+# In general: Time Border setting is from given point + 24 hours.
+# The first backup within this time window will be type "yearly".
+# while this is valid. When shall the year backup run?
+# (mm-DD-HHMMh, e.g. 09-03-1700h means the 24h start at March
+# 9th at 5 PM and end at March 10th 4:59:59 PM)
+Time Border		= %TIMEBORDERYEAR%
+Quantity		= %QUANTITYYEAR%
+Source			= %SOURCEYEAR%
+Include From		= %INCLUDEFROMYEAR%
+Exclude From		= %EXCLUDEFROMYEAR%
+Server Pre Run		= %SERVERPRERUNYEAR%
+Server Pre Fail		= %SERVERPREFAILYEAR%
+Client Pre Run		= %PRERUNYEAR%
+Client Pre Fail		= %PREFAILYEAR%
+Backup Failure Handling	= %BACKUPFAILUREYEAR%
+Client Post Run		= %POSTRUNYEAR%
+Client Post Fail	= %POSTFAILYEAR%
+Server Post Run		= %SERVERPOSTRUNYEAR%
+Server Post Fail	= %SERVERPOSTFAILYEAR%
+
+[Month]
+# When shall the month backup run? (DD-HHMMh, e.g.
+# 02-1500h means every month at 2nd at 3 PM, if the given day is
+# later than the month has days, it will use the last day of
+# month.)
+Time Border		= %TIMEBORDERMONTH%
+Quantity		= %QUANTITYMONTH%
+Source			= %SOURCEMONTH%
+Include From		= %INCLUDEFROMMONTH%
+Exclude From		= %EXCLUDEFROMMONTH%
+Server Pre Run		= %SERVERPRERUNMONTH%
+Server Pre Fail		= %SERVERPREFAILMONTH%
+Client Pre Run		= %PRERUNMONTH%
+Client Pre Fail		= %PREFAILMONTH%
+Backup Failure Handling	= %BACKUPFAILUREMONTH%
+Client Post Run		= %POSTRUNMONTH%
+Client Post Fail	= %POSTFAILMONTH%
+Server Post Run		= %SERVERPOSTRUNMONTH%
+Server Post Fail	= %SERVERPOSTFAILMONTH%
+
+[Week]
+# When shall the week backup run? (N Number between 0-7
+# where 0=7=Sun)
+# N-HHMM e.g. 5-1800 means every Frieday 6 PM
+Time Border		= %TIMEBORDERWEEK%
+Quantity		= %QUANTITYWEEK%
+Source			= %SOURCEWEEK%
+Include From		= %INCLUDEFROMWEEK%
+Exclude From		= %EXCLUDEFROMWEEK%
+Server Pre Run		= %SERVERPRERUNWEEK%
+Server Pre Fail		= %SERVERPREFAILWEEK%
+Client Pre Run		= %PRERUNWEEK%
+Client Pre Fail		= %PREFAILWEEK%
+Backup Failure Handling	= %BACKUPFAILUREWEEK%
+Client Post Run		= %POSTRUNWEEK%
+Client Post Fail	= %POSTFAILWEEK%
+Server Post Run		= %SERVERPOSTRUNWEEK%
+Server Post Fail	= %SERVERPOSTFAILWEEK%
+
+[Day]
+# When shall the day backup run? (HHMMh or HH:MM, e.g.
+# 0000h or 00:00)
+Time Border		= %TIMEBORDERDAY%
+Quantity		= %QUANTITYDAY%
+Source			= %SOURCEDAY%
+Include From		= %INCLUDEFROMDAY%
+Exclude From		= %EXCLUDEFROMDAY%
+Server Pre Run		= %SERVERPRERUNDAY%
+Server Pre Fail		= %SERVERPREFAILDAY%
+Client Pre Run		= %PRERUNDAY%
+Client Pre Fail		= %PREFAILDAY%
+Backup Failure Handling	= %BACKUPFAILUREDAY%
+Client Post Run		= %POSTRUNDAY%
+Client Post Fail	= %POSTFAILDAY%
+Server Post Run		= %SERVERPOSTRUNDAY%
+Server Post Fail	= %SERVERPOSTFAILDAY%
+
+[Hour]
+# When shall the hour backup run? (MMm, e.g. 00m)
+Quantity		= %QUANTITYHOUR%
+Source			= %SOURCEHOUR%
+Include From		= %INCLUDEFROMHOUR%
+Exclude From		= %EXCLUDEFROMHOUR%
+Server Pre Run		= %SERVERPRERUNHOUR%
+Server Pre Fail		= %SERVERPREFAILHOUR%
+Client Pre Run		= %PRERUNHOUR%
+Client Pre Fail		= %PREFAILHOUR%
+Backup Failure Handling	= %BACKUPFAILUREHOUR%
+Client Post Run		= %POSTRUNHOUR%
+Client Post Fail	= %POSTFAILHOUR%
+Server Post Run		= %SERVERPOSTRUNHOUR%
+Server Post Fail	= %SERVERPOSTFAILHOUR%
+

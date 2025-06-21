@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+#set -x
+
+UNAME="$(uname)"
+DEST="$UNAME"	# FreeBSD or Linux
+CONFFILE="$(dirname $0)/configuration.conf"
+PERLBREW_ROOT="$(pwd)/work/perlbrew"
+INSTALLDIR=
+
+function usage() {
+	distance=25
+	echo -e "Usage:
+  $0 [-d <dir to install to>]
+  $0 [-b] # Sets defaults by OS
+  $0 [-p <your PERLBREW_ROOT>] # defaults to '$PERLBREW_ROOT'
+  $0 [-i <your INSTALLDIR>] # defaults to '' (NULL means /<root>)
+
+  Directories to install to (-d):"
+	printf "    %-${distance}s   %s\n" /usr 'Recommended for Linux based systems'
+	printf "    %-${distance}s   %s\n" /usr/local 'Recommended for BSD based systems'
+	printf "    %-${distance}s   %s\n" "/opt/$(basename "$(dirname "$(realpath "$0")")")" 'If intended to install different versions at the same time'
+
+	echo -e '\n-b is used when "'$0'" is executed without options.'
+	}
+
+while getopts "bd:p:i:hu" option ; do
+	case $option in
+		h|u|help|usage)
+			usage
+			exit 0
+			;;
+		b)
+			DEST="$UNAME"
+			;;
+		d)
+			DEST=$OPTARG
+			if [ -e "$DEST" ] && [ ! -d "$DEST" ] ; then
+				echo "\"$DEST\" is not a directory." 1>&2
+				exit 1
+			elif ( [ "$DEST" == "/usr" ] && [ "$UNAME" == "Linux" ] ) || ( [ "$DEST" == "/usr/local" ] && [ "$UNAME" == "FreeBSD" ] ) ; then
+				DEST="$UNAME"
+				fi
+			;;
+		p)
+			if [ -e "$OPTARG/bin/perlbrew" ] ; then
+				PERLBREW_ROOT="$OPTARG"
+				echo -e "WARNING: This will install perl-5.40.2 and several libraries without \`perlbrew lib create ...\` into your perlbrew environment." 1>&2
+			else
+				echo "Missing '$OPTARG/bin/perlbrew'." 1>&2
+				exit 2
+				fi
+			;;
+		i)
+			if [ -d "$OPTARG" ] || [ ! -e "$OPTARG" ] ; then
+				INSTALLDIR=$OPTARG
+			else
+				echo "'$OPTARG' is not a directory." 1>&2
+				exit 3
+				fi
+			;;
+		*)
+			usage
+			exit 3
+			;;
+		esac
+	done
+
+DEST=$(echo "$DEST" | sed -E 's/\/+$//')
+#echo "$DEST" > "$CONFFILE"
+echo "DEST=$DEST" > "$CONFFILE"
+echo "PERLBREW_ROOT=$PERLBREW_ROOT" >> "$CONFFILE"
+echo "INSTALLDIR=$INSTALLDIR" >> "$CONFFILE"
+echo "Wrote configuration to \"$CONFFILE\"."
+( set -x ; cat "$CONFFILE" )
+
+mkdir -p "$(dirname "$(realpath "$0")")/work"
+exit 0

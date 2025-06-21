@@ -1,0 +1,1178 @@
+=pod
+
+=encoding utf8
+
+=head1 NAME
+
+Safirbu - Solution for Automatic Full Incremental Remote Backup on Unix
+
+=head1 SYNOPSIS
+
+C<<< safirbu [options] <command> <<args>...> >>>
+
+=head1 DESCRIPTION
+
+I<safirbu> is a wrapper around I<rsync> for creating backups and creating statistics about these. It makes complex coordination between server and client much easier.
+
+While offering base functions known as C<< <command> >> or C<< <sub command> >>, the actual procedures will vary based on the provided options. The configuration files are inspired by those used for Systemd.
+
+Arguments are case-insensitive job names or paths to job files, independent of their location.
+
+Return values:
+
+=over 2
+
+=item * 0  : Operation was successful.
+
+=item * 1  : Interrupted by user (B<^C> or B<SIG INT>) on offering to prevent running the wrong job.
+
+=item * 5  : Sub-command not known.
+
+=item * 6  : Too many sub-commands supplied.
+
+=item * 7  : Environment not satisfied.
+
+=item * 8  : Given sub-commands can not be run together.
+
+=item * 9  : Given unit is unkown.
+
+=item * 110: (Usually invisible) Only happens on forks' exit codes if the code it executed failed.
+
+=item * 120: Interrupted by user (B<^C> or S<B<SIG INT>>).
+
+=back
+
+Available sub-commands:
+
+=over 2
+
+=item * I<backup>
+
+=item * I<create>
+
+=item * I<list>
+
+=begin comment
+
+=item * I<rollback>
+
+=end comment
+
+=item * I<show>
+
+=item * I<size>
+
+=begin comment
+
+WORK
+
+=item * I<watch>
+
+=end comment
+
+=back
+
+B<NOTE:> If anyone is looking for it: further down is a chapter on S<L</RESTORING A BACKUP>>.
+
+=head1 OPTIONS
+
+=over 4
+
+=item B<--ask>, B<--select>
+
+Selects which sizing shall be deleted or shown.
+Applicable for the B<list> and B<size> commands.
+
+=item B<-b>, B<--batch>
+
+Changes B<list>'s output to CSV format.
+
+=begin comment
+
+WORK
+
+=item B<--dry>, B<--dryrun>
+
+Do not do anything just prepare and tell what would be done.
+Implies --verbose on maximum level.
+Applicable for the B<backup> and B<size> commands.
+
+=end comment
+
+=item B<-f>, B<--fast>, B<--hurry>
+
+Different backup procedure to delay clean-ups for prioritizing the backup itself.
+Applicable for the B<backup> and B<backup>,B<size> combination commands.
+
+I<WARNING:> Use with care and read section S<L</FAST AND PARALLEL>> first!!
+
+=item B<--nohardlink>, B<--noprotector>
+
+Disables dynamic clean-up delays, which, enabled by default, try to maintain the hard link chain. This can increase the download size significantly.
+
+For example, assume not using B<--fast>, but keeping only one backup. In this scenario, the dynamic clean-up delay will postpone the clean-up until after the backup. This is done to download only changed files. Otherwise, instead of only downloading the delta, it would need to download everything from the very beginning because the hard link target was deleted beforehand. Usually, hardlinks are preferable. Yet, this behavior can be problematic in the following scenarios: if there is not enough space to hold a full backup plus a delta or the new backup consists mostly of changes, so there is nothing to hardlink at all. In these cases, keeping the former backup makes no sense.
+Applicable for the B<backup> command.
+
+=item B<--noping>
+
+Disables the ping test for the client computer. Only useful for remote clients.
+
+Use this if the client would not respond, even if it was able to communicate. (For example, for security reasons.) This only disables the connection test via ping. A test with OpenSSH is still performed and must also be successful for remote clients. Otherwise the backup would also fail.
+
+=item B<-h>, B<--help>, B<--usage>
+
+Shows a short help.
+
+=item B<-l[l[l...]]>, B<--loglevel [--loglevel [--loglevel]]>, B<--level [--level [--level]]>
+
+Temporarily increases the log level for the logging to the file. Stackable.
+
+=item B<-n>, B<--nice-client>
+
+This makes the B<client>side run all resource intensive commands with prefixed S<B<nice -n 19 ionice -c 3>>.
+It might increase the necessary backup time, but still allows systems to continue performing their critical jobs without hindrance.
+You should try this in non-critical situations, and document how the system behaves with and without the S<B<nice>> option. If the backup never finishes, it's not even worth doing it at all. To prevent the backup from starving, you should consider times when the system is not critical on resources.
+Applicable for the B<backup> command.
+
+To use this option, both B<nice> and B<ionice> must be available on the client. While B<nice> is usually part of the base installation on most *NIXes, B<ionice> is not.
+
+=item B<-N>, B<--nice-server>
+
+This makes the B<server>side run all resource intensive commands with prefixed S<B<nice -n 19 ionice -c 3>>.
+It might increase the needed backup time, but allows the backup server to prioritize different backup jobs than those provided by this call.
+You should try this in non-critical situations, and document how the system behaves with and without the S<B<nice>> option. If the backup never finishes, it's not even worth doing it at all. To prevent the backup from starving, you should consider times when the system is not critical on resources.
+Applicable for the B<backup> and B<size> commands.
+
+I<HINT for Linux:> B<systemd-units> allow to decide based on available resources when to start a job.
+
+=item B<-p>, B<--parallel>
+
+Run the given jobs in parallel, i.e. at the same time.
+Applicable for the B<backup> and B<size> commands.
+
+I<WARNING:> Use with care and read section S<L</FAST AND PARALLEL>> first!!
+
+=item B<< -u <unit sign> >>, B<< --units <unit sign> >>
+
+Overrides the displayed units to the given one. By default, the displayed units are automatically adjusted to an appropriate unit.
+A B<unit sign> is the first letter of the scale, e.g. S<B<k>> for kilobyte or S<B<g>> for gigabyte. Lower case uses base 1024, caps applies base 1000 (S<B<k>, B<m>, B<g>,... B<K>, B<M>, B<G>,...>).
+Applicable for the B<list> command.
+
+=item B<-v[v[v...]]>, B<--verbose [--verbose [--verbose]]>
+
+Increases the output's log level to STDIO temporarily. Stackable. See L</OUTPUT> for further details.
+
+=item B<-w>, B<--wait>
+
+Prevents forking to background. Instead waits for the given jobs to finish. Use this if you need to block your shell or script so everything waits for the given jobs before continuing. By default, it is non-blocking.
+Applicable for the B<backup> and B<size> commands. See L</OUTPUT> for further details.
+
+=begin comment
+
+WORK
+Applicable for the B<backup>, B<size> and B<watch> commands.
+
+=end comment
+
+=item B<< --destination </path> >>,
+
+=item B<< --dnsname <fqdn> >>,
+
+=item B<< --ip <IP address> >>,
+
+=item B<< -S </path or rsync target> >>, B<< --source=</path or rsync target> >>,
+
+=begin comment
+
+=item B<< -y <integer> >>, B<< --years=<integer> >>,
+
+=item B<< -m <integer> >>, B<< --months=<integer> >>,
+
+=item B<< -w <integer> >>, B<< --week=<integer> >>,
+
+=item B<< -d <integer> >>, B<< --days=<integer> >>,
+
+=item B<< -h <integer> >>, B<< --hours=<integer> >>,
+
+=item B<< -s <hours as floating point numbers> >>, B<< --space=<hours as floating point numbers> >>,
+
+=item B<< -t <hours and minutes> >>, B<< --timeborder=<HHMMh> >>, B<< --border=<2359h> >>,
+
+=item B<< --prerun=<command or /path/to/script.sh> >>,
+
+=item B<< --prefail=<command or /path/to/script.sh> >>,
+
+=item B<< --postrun=<command or /path/to/script.sh> >>,
+
+=item B<< --postfail=<command or /path/to/script.sh> >>,
+
+=item B<< --serverprerun=<command or /path/to/script.sh> >>,
+
+=item B<< --serverprefail=<command or /path/to/script.sh> >>,
+
+=item B<< --serverpostrun=<command or /path/to/script.sh> >>,
+
+=item B<< --serverpostfail=<command or /path/to/script.sh> >>
+
+=end comment
+
+Parameters to specify a new job file. See more details at L<safirbu-config(5)>.
+Applicable for the B<create> command.
+
+=back
+
+Lists are comma or white space separated. Command line options override the respective settings given in the configuration files.
+
+=head1 SUB-COMMANDS
+
+=head2 Create Command
+
+Command: B<create>
+
+Creates a new configuration file based on the given parameters.
+As not all options can be configured by this command, one might want to modify the created file afterwards.
+
+See L<safirbu-config(5)> for further details.
+
+=over 2
+
+=item B<safirbu create --source="/" [options] myJob>
+
+Creates "/etc/safirbu/jobs/myjob.job" which is backing up the whole root file system.
+
+=item B<safirbu create --source=":myloc" [options] myJob>
+
+Creates "/etc/safirbu/jobs/myjob.job" which is backing up whatever is configured as rsyncI<d> target "myloc". In rsync's terminology this target is referred to as a "module". B<L<rsync(1)>>
+
+=item B<safirbu create --source=":myloc" [options] ./myJob>
+
+Creates "./myJob" which is backing up whatever is configured as rsyncI<d> target "myloc". In rsync's terminology this target is referred to as a "module". B<L<rsync(1)>>
+
+=back
+
+=head2 Show Command
+
+Command: B<show>
+
+=over 2
+
+=item B<< safirbu show <job> >>
+
+Shows the configuration that the given job was run with, as it was compiled from all relevant configuration files.
+Exits afterwards.
+
+=back
+
+=head2 B<Backup Command>
+
+Command: B<backup>
+
+Prepares and runs a backup preceded by a clean-up if applicable. This behavior can be altered in various ways by B<size>, B<--fast> and B<--parallel>. See S<L</FAST AND PARALLEL>> for further details.
+
+Forks to background, non-blocking. If this is not desired, use B<--wait> to keep it in foreground, blocking your shell or next command.
+
+=over 2
+
+=item S<<<< B<<<< safirbu backup [options] <job name< job name<,job name>>> >>>> >>>>
+
+Runs the backup of the given job(s). Jobs must be separated by spaces or commas.
+
+=item S<<<< B<<<< safirbu backup [options] ALL >>>> >>>>
+
+Runs the backup of all known jobs.
+Known jobs are those, which are found in the default jobs directory. (Details of locations can be found at S<L</DIRECTORIES AND FILES>>.)
+Also check out S<L<THE PSEUDO JOB ALL>>.
+
+=item S<< B<< safirbu backup,size [options] <job name(s)> >> >>
+
+Runs the backup job and sizes it. Sequence depends on B<--fast> and B<--parallel>. See S<L</FAST AND PARALLEL>> and S<L</Size Command>> for further details.
+
+=back
+
+=begin comment
+
+=head2 Rollback Command
+
+Command: B<rollback>
+
+First hand it seems to be just a fancy way to remove backups, which one may do themselve as well, but it also cleans some things of safirbu in background immediately.
+Simply spoken: one can just use S<C<rm -rf /dest/job/backup>>, which has almost the same effect.
+The only big advantage is the collision check the B<rollback> sub-command does to verify it's the only task working on this job. (See S<L</LOCKS AND PROTECTIONS>> for further details.)
+
+=over 2
+
+=item B<< safirbu rollback <job> >>
+
+Basically just a recursive deletion of the last backup after interactive approvement.
+
+=item B<< safirbu --ask rollback <job> >>
+
+Shows which backups can be removed, before continuing with the approvement.
+
+=back
+
+=end comment
+
+=head2 Size Command
+
+Command: B<size>
+
+Uses C<du>, C<find> and C<wc> to size and record the backups created so that they can be checked later. The recordings can be queried with C<< safirbu list <job> >>.
+
+=over 2
+
+=item B<< safirbu size <job(s)> >>
+
+Sizes the given backup job(s).
+
+=item B<< safirbu size ALL >>
+
+Sizes all known jobs.
+Also check out S<L<THE PSEUDO JOB ALL>>.
+
+=item S<< B<< safirbu size --ask <job> >> >>
+
+=item S<< B<< safirbu size --select <job> >> >>
+
+Asks whether the last sizing shall be repeated. Useful if you manually repeated a backup, e.g. via executing rsync directly, and want an updated sizing.
+If the backups and sizing request were executed and the directory structure has not changed since the last sizing, the sizes will not be computed again. Using B<--ask> allows to force the sizing.
+
+=item S<< B<< safirbu size,backup [options] <job(s)> >> >>
+
+Runs backup job and sizes it. Sequence depends on B<--fast> and B<--parallel>. See section S<L</FAST AND PARALLEL>> and S<L</Backup Command>> for further details.
+
+=back
+
+=head2 List Command
+
+Command: B<list>
+
+Shows the recordings created by C<< safirbu size <job(s)> >>
+
+=over 2
+
+=item B<< safirbu list <job(s)> >>
+
+Lists sizes of the given job(s) to STDOUT.
+
+=item B<< safirbu list --ask list <job> >>
+
+Only available for one job at a time. Allows listing of historical sizings of the job.
+Interactive.
+
+=item B<< safirbu list --unit g <job(s)> >>
+
+Lists sizes of the given job(s), but all byte related numbers are calculated to GiB (Gibibyte).
+
+=item B<< safirbu list --unit G <job(s)> >>
+
+Lists sizes of the given job(s), but all byte related numbers are calculated to GB (Gigabyte).
+
+=item B<< safirbu list --batch <job(s)> >>
+
+Changes the output to CSV format.
+
+=back
+
+=begin comment
+
+WORK MILESTONE
+NOT IMPLEMENTED YET
+
+=head2 Watch Command
+
+Command: B<watch>
+
+Leave watching commands using [Ctrl]+[c] / ^C / SIGNAL-INT.
+
+=over 2
+
+=item B<safirbu watch>
+
+Starts an NCurses instance to show the status of any running jobs.
+If no job is running, it exits immediately.
+If all jobs finished it exits.
+
+=item B<< safirbu watch <job> >>
+
+Starts an NCurses instance and shows details about the requested job. No output means the job is not or no longer running.
+If the job finished it exits.
+
+=item B<safirbu --wait watch>
+
+Prevent from exiting automatically. Will run until interrupted, waiting for jobs starting, also waiting after all jobs finished.
+
+=item B<safirbu --wait watch job>
+
+Prevent from exiting automatically. Will run until interrupted, waiting for the job starting, also waiting after the given job finished.
+
+=back
+
+=end comment
+
+=head1 FAST AND PARALLEL
+
+An individual backup job can be understood as a sequence of simple (mostly independent) tasks, which are:
+
+=over 2
+
+=item B<Global preparations>
+
+These are defined in S<B<Global Pre Run>>. They are executed before the first backup job is run.
+
+=item B<Clean-up>
+
+Deleting backups which are exceeding the given quantity setting. (Oldest of the same type will be deleted first.)
+
+=item B<Job specific preparations>
+
+They are defined in S<B<Server Pre Run>> and S<B<Client Pre Run>>.
+S<B<Server Pre Run>> will run first.
+
+=item B<The actual backup>
+
+Here, rsync does its magic.
+
+=item B<Job specific post-processing>
+
+All the way back within each job (FILO): S<B<Client Post Run>> and S<B<Server Post Run>>.
+S<B<Client Post Run>> will run first.
+
+=item B<Sizing [optionally]>
+
+Sizing measures and records the backups so that one can check if the backup was successful. And if it was unsuccessful, to find the discrepancies.
+
+(Even if safirbu considers the backup to be successful, it may have failed. Not all scenarios that may cause a backup to fail can be taken into account, but sizing helps to decide that for yourself.)
+
+=item B<Global post-processing>
+
+Runs after all the backup jobs have completed and executes whatever is defined in the S<B<Global Post Run>>.
+
+=back
+
+While these steps may appear in almost every backup scenario, the sequential order may be changed. For safirbu there are four factors which affect this behavior dramatically:
+
+=over 2
+
+=item * B<size>
+
+=item * B<--parallel>
+
+=item * B<--fast>
+
+=item * B<a single or multiple jobs>
+
+=back
+
+The following sections will showcase different scenarios, each consisting of the situation, an example and the resulting sequence. The showcased sequences may differ from the ones encountered in reality.
+For example, if no S<B<Pre Run>> was defined, the tasks will still be called, but just continue as there is nothing to do.
+
+=head2 Simple backup job
+
+C<safirbu backup myjob>
+
+This is the most basic scenario.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Clean-up
+
+=item 3.  Job specific preparations
+
+=item 4.  The actual backup
+
+=item 5.  Job specific post-processing
+
+=item 6.  Global post-processing
+
+=back
+
+=head2 Backup with multiple jobs
+
+C<safirbu backup myjob1 myjob2 myjobN>
+
+If multiple jobs are backed up at once, you can see that the Global steps wrap the individual jobs and are executed only once.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item I<2.>  Clean-up for myjobB<1>
+
+=item 3.  Job specific preparations for myjobB<1>
+
+=item 4.  The actual backup for myjobB<1>
+
+=item 5.  Job specific post-processing for myjobB<1>
+
+=item I<6.>  Clean-up for myjobB<2>
+
+=item 7.  Job specific preparations for myjobB<2>
+
+=item 8.  The actual backup for myjobB<2>
+
+=item 9.  Job specific post-processing for myjobB<2>
+
+=item I<10.> Clean-up for myjobB<N>
+
+=item 11. Job specific preparations for myjobB<N>
+
+=item 12. The actual backup for myjobB<N>
+
+=item 13. Job specific post-processing for myjobB<N>
+
+=item 14. Global post-processing
+
+=back
+
+=head2 Backup and size as single command
+
+C<safirbu backup,size myjob>
+
+Compared to the simple backup job detailed before, sizing just adds another step.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Clean-up
+
+=item 3.  Job specific preparations
+
+=item 4.  The actual backup
+
+=item 5.  Job specific post-processing
+
+=item 6.  Sizing
+
+=item 7.  Global post-processing
+
+=back
+
+=head2 Backup and size as single command for multiple jobs
+
+C<safirbu backup,size myjob1 myjob2 myjobN>
+
+If instead of a single job, multiple backup jobs are processed at once, the sizing is done separately for each job.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item I<2.>  Clean-up for myjobB<1>
+
+=item 3.  Job specific preparations for myjobB<1>
+
+=item 4.  The actual backup for myjobB<1>
+
+=item 5.  Job specific post-processing for myjobB<1>
+
+=item 6.  Sizing of myjobB<1>
+
+=item I<7.>  Clean-up for myjobB<2>
+
+=item 8.  Job specific preparations for myjobB<2>
+
+=item 9.  The actual backup for myjobB<2>
+
+=item 10. Job specific post-processing for myjobB<2>
+
+=item 11. Sizing of myjobB<2>
+
+=item I<12.> Clean-up for myjobB<N>
+
+=item 13. Job specific preparations for myjobB<N>
+
+=item 14. The actual backup for myjobB<N>
+
+=item 15. Job specific post-processing for myjobB<N>
+
+=item 16. Sizing of myjobB<N>
+
+=item 17. Global post-processing
+
+=back
+
+=head2 I<Fast> backups
+
+C<safirbu --fast backup myjob>
+
+The S<--fast> option will adapt the usual sequence, so that the actual backup is done as early as possible. Note that compared to the simple single job, the clean up is performed after the job specific post processing is run.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Job specific preparations
+
+=item 3.  The actual backup
+
+=item 4.  Job specific post-processing
+
+=item 5.  Clean-up
+
+=item 6.  Global post-processing
+
+=back
+
+=head2 Multiple I<fast> backups
+
+C<safirbu --fast backup myjob1 myjob2 myjobN>
+
+While the fast run for a single job is not that spectacular, for multiple jobs it makes a big difference. The main drawback is: One has to calculate the required backup space precisely due to the delayed clean-up cycle. It makes up for this as the backup is prioritized over anything else.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Job specific preparations for myjobB<1>
+
+=item 3.  The actual backup for myjobB<1>
+
+=item 4.  Job specific post-processing for myjobB<1>
+
+=item 5.  Job specific preparations for myjobB<2>
+
+=item 6.  The actual backup for myjobB<2>
+
+=item 7.  Job specific post-processing for myjobB<2>
+
+=item 8.  Job specific preparations for myjobB<N>
+
+=item 9.  The actual backup for myjobB<N>
+
+=item 10. Job specific post-processing for myjobB<N>
+
+=item 11. Clean-up for myjobB<1>
+
+=item 12. Clean-up for myjobB<2>
+
+=item 13. Clean-up for myjobB<N>
+
+=item 14. Global post-processing
+
+=back
+
+=head2 I<Fast> backups and size
+
+C<safirbu --fast backup,size myjob>
+
+When using the sizing together with the S<--fast> option, the sizing is done after the cleanup has run.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Job specific preparations
+
+=item 3.  The actual backup
+
+=item 4.  Job specific post-processing
+
+=item 5.  Clean-up
+
+=item 6.  Sizing
+
+=item 7.  Global post-processing
+
+=back
+
+=head2 Multiple I<fast> backups and sizings
+
+C<safirbu --fast backup,size myjob1 myjob2 myjobN>
+
+When multiple jobs are run using S<--fast>, the sizing for each individual job is executed after the whole clean-up cycle was executed.
+
+=over 2
+
+=item 1.  Global preparations
+
+=item 2.  Job specific preparations for myjobB<1>
+
+=item 3.  The actual backup for myjobB<1>
+
+=item 4.  Job specific post-processing for myjobB<1>
+
+=item 5.  Job specific preparations for myjobB<2>
+
+=item 6.  The actual backup for myjobB<2>
+
+=item 7.  Job specific post-processing for myjobB<2>
+
+=item 8.  Job specific preparations for myjobB<N>
+
+=item 9.  The actual backup for myjobB<N>
+
+=item 10. Job specific post-processing for myjobB<N>
+
+=item 11. Clean-up for myjobB<1>
+
+=item 12. Clean-up for myjobB<2>
+
+=item 13. Clean-up for myjobB<N>
+
+=item 14. Sizing of myjobB<1>
+
+=item 15. Sizing of myjobB<2>
+
+=item 16. Sizing of myjobB<N>
+
+=item 17. Global post-processing
+
+=back
+
+=head2 PARALLEL
+
+The B<--parallel> switch has no effect for single jobs, while for multiple jobs, it makes a big difference.
+As the name of the switch indicates, it runs the jobs in parallel.
+The sequences as described above are essentially the same as the one for single jobs, but each job is running independently.
+The only difference is the L<saribu-config(5)>: these are always waiting for the last job finishing.
+Although the jobs are started almost at the same time and follow the same route, they do it in their own pace: While one job may almost be done, another may just have finished its clean-up stage and start its actual backup.
+
+It's recommended to I<NOT> use the B<--parallel> switch except for circumstances, where it's the only reasonable solution for the situation.
+Usually, one could declare several backup jobs at the crontab for the same time. The effect is quite the same as the switch, but it will allow easier fine-tuning on individual jobs. When using B<--parallel>, on the other hand, will require copying the crontab line and changing it, e.g., if one single job needs a different runtime.
+While many lines may become confusing quickly, one line with many jobs might be even more confusing.
+
+So why should one use B<--parallel> at all? Yeeeeah...
+It was thought of dropping the switch anyway, so maybe one shouldn't?
+To be honest: It was very easy to implement, and also done when I wrote the manual, so I didn't remove it, but I think best practice would be to consider it "non-existent".
+Maybe it makes more sense using it just for manual backup starts, lowering the amount of written commands.
+Maybe there's another good reason for this switch to continue existing, so I'll not drop it, but invest no more lines in the manual.
+Just see it as an internal way to do something like this:
+
+=over 2
+
+=item B<C<safirbu --parallel backup myjob1 myjob2 myjobN>>
+
+=item which is almost the same as
+
+=item B<C<safirbu backup myjob1 & safirbu backup myjob2 & safirbu backup myjobN &>>
+
+=item but much shorter and has a bit lower overhead. (One against several initializing stacks.)
+
+=back
+
+The only real advantage might be the opportunity which brings the combination of the B<--parallel> and B<--wait> switches: It would block until all provided jobs are finished, but running at the (maybe!) the shortest possible time.
+Waiting for processes started to background can be a pain in the a** within bash scripting as far as I know, but this combination would solve this for you.
+S<B<C<safirbu --wait --parallel backup ALL>>>
+
+See L</THE PSEUDO JOB ALL>
+
+=head2 Other situations, where the switch may come in handy
+
+=over 2
+
+=item Z<>If you want to run the backups all at once and size right after that, but not in-between each backup, just make two commands to accomplish this:
+
+=item Z<>B<C<safirbu --wait backup myjob1 myjob2 myjobN ; safirbu [--wait] size myjob1 myjob2 myjobN>>
+
+=item Z<>Be aware: the B<--wait> for the backup is required; otherwise, it would fork to background and the sizing tries to run in parallel.
+
+Z<>
+
+=item Z<>Think a bit out of the box, and you will find many (crazy?) variations.
+
+=back
+
+=head1 EXTENDED FILE ATTRIBUTES
+
+=over 2
+
+=item B<I<Linux>>
+
+On I<Linux> I<xattrs>, metadata of files, addressable by C<L<setfattr(1)>> and C<L<getfattr(1)>> are transferred.
+
+=item B<I<FreeBSD>>
+
+On I<FreeBSD> the xattrs are transferred as well, but addressable by C<setextattr>, C<L<rmextattr(1)>>, and C<getextattr>. However, file flags, addressed by C<L<chflags(1)>> are intentionally not transferred by rsync. The rsync for FreeBSD can do this, but this would lead to problems with Linux (cross backup) and much worse: rsync transfers the flags too early, whereby the C<I<simmutable>> flag would cause damage to the backup.
+
+=back
+
+=head1 THE PSEUDO JOB B<ALL>
+
+Using the keyword B<ALL> instead of the job names actually pulls all known jobs. (The known jobs are those found at C<etc/safirbu/jobs/*.{job,conf,config,configuration}>.) Other job names are ignored if this keyword was found. Must be capitals.
+
+Jobs called up by B<ALL> are processed in alphabetical order. Jobs from other locations or in a non-alphabetical order must be entered manually without the B<ALL> keyword.
+
+=head1 LOCKS AND PROTECTIONS
+
+Safirbu has several locking and protection mechanisms for preventing tasks/jobs and sometimes simple extensions (e.g., S<GLOBAL RUNS> (L<saribu-config(5)>) from conflicting when running into each other.
+
+To get an idea of how the locking works, consider the following, quite common scenario:
+The lock file becomes noticeable, if a job once requested was not started, because a lock file indicates the job is already running in a mode it must not temper with.
+
+If anything runs into this situation, usually a warning shows up (at least in the main log), and it is just skipped and continued at the next job.
+
+In the very rare case that the unlocking failed, one may check B</dev/shm> and B</var/lock>. Usually this is unnecessary, because the lock mechanism is able to detect if a lock file is unused (crashed process) or really protecting something. If you change any persistent things, which may even survive a reboot, maybe think of your own (persistent) lock files. Another option is to make your task non-persistent as a lock file. E.g.: a manual mount is no longer present after a reboot, exactly like a lock file. But if you wrote something to a persistent device, it would survive the reboot, but a lock file of safirbu does not.
+
+=head1 CLIENT-SIDE DEPENDENCIES
+
+While dependencies for the server should be installed alongside Safirbu itself, no dependency resolving happened on client side. This must be done by the administrator to make Safirbu work properly. Simply speaking:
+
+=over 2
+
+=item * B<L<rsync(1)>> must be installed. It must be found within C<$PATH>, this should be the default case if installed the regular way of your distribution.
+
+=item * B<L<ssh(1)>> must be installed and the daemon running. Find more details at B<L<sshd(8)>>.
+
+=item * A B<S<pre-shared key>> must be set up between the server's root and client's root account. Otherwise, the backup may be stuck on a password entry request. Furthermore, it allows preventing root from logging in via password authentication at all. See more details at B<L<ssh(1)>>, B<L<sshd(8)>>, and B<L<ssh-copy-id(1)>>. Only root can use all features of B<L<rsync(1)>>. Also, checkout L</SAFETY> for more suggestions!
+
+=item * If you want to set up modules to reduce file system access, B<rsyncd> (rsync-daemon, B<L<rsync(1)>>) is required. However, due to rsync's authentication methods working on clear text only, rsyncd-module-only-based backup authentication is not implemented for B<safirbu> at all and the rsyncd-modules can be accessed only as anonymous. If you want protection, stick to ssh. To reduce the danger of ssh access, you could set up a ForceCommand for ssh. See B<L<sshd_config(5)>> for details.
+
+=back
+
+=head1 SAFETY
+
+=head2 Remote access via SSH
+
+By using pre-shared keys for ssh as root, access should be restricted to this method only for root. The minimum recommendation is to set S<C<PermitRootLogin prohibit-password>> to only allow connections of root via pre-shared keys.
+For even more security, C<ForceCommand> can also be used.
+
+B<Caution>: if the C<ForceCommand> option is used incorrectly, it may no longer be possible to back up the system. Even worse, one may be completely locked out of the system.
+
+See L<sshd_config(5)> for further details.
+
+=head2 Local data storage
+
+The data backup, whether on the same or a separate host as any user, should B<never> be readable by any account other than root. Otherwise, deletions/changes could be made directly to the backup using the backed up permissions. The directory used as 'Destination' in the main configuration file should belong to root:root and have the permissions 0700.
+This is also recommended if the data storage medium is encrypted and unmounted or the backups are stored entirely on a completely independent host.
+
+Note: Never change the permissions of files and folders in a backup. Neither rsync nor a restore would work properly afterwards. Backups should never be changed manually in any way. It is best practice to mount the backup medium read-only before doing a restore.
+
+See L<chown(1)> and L<chmod(1)> for further details.
+
+=head1 OUTPUT
+
+While the S<log level> is working straightforward, this can look very different for the verbosity. In some cases, it may seem as if the log level had no effect on it whatsoever. The reason for this is that processes that are forked only log, but no longer write to the STDIO channels. This can be prevented by using the following switches: set the C<--wait> switch, if necessary with several C<--verbose> switches (e.g. -vvvv) to increase the output and do B<not> set the C<--parallel> switch.
+
+The only processes that fork are usually jobs. These usually log errors to C</var/log/safirbu/jobs/C1234.err>, where 1234 would be the PID. Use sorting by time stamp (L<ls(1)>) and L<grep(1)> or L<less(1)> searching for the string C<C1234> within C</var/log/safirbu/log>. (I<C<less>> is recommended due to multi-line output.)
+
+=head1 DATABASES
+
+Backing up databases with safirbu is possible in two ways:
+
+=over 2
+
+=item B<Dump to file>
+
+This is the recommended method. Check the manual of your DBMS to see how the database can be saved to a file. Most DBMSs include a corresponding program. Use this to temporarily create a file that can be used to restore the database.
+
+The raw database data should be added to the exclude file. If there are configuration files in the same location, these must be copied elsewhere before the backup or added to the include file.
+
+S<I<Client Pre Run>> can be used to create the database dump file. With S<I<Client Post Run>> it could also be deleted afterwards.
+
+=over 4
+
+=item Advantages
+
+=over 2
+
+=item * A secure method of transferring and backing up databases.
+
+=item * High data consistency.
+
+=item * These files can also be used to set up test systems.
+
+=item * Usually short locking periods for tables.
+
+=item * Usually more portable: several versions of the DBMS can handle the file, sometimes even other DBMS.
+
+=item * The DBMS remains in operation and can still process a limited number of requests.
+
+=back
+
+=item Disadvantages
+
+=over 2
+
+=item * Locking mechanisms in the DBMS make some tables temporarily inaccessible to prevent changes and maintain data consistency.
+
+=item * Some queries cannot be answered at all.
+
+=item * Some queries are answered so slowly that errors occur in the frontend.
+
+=back
+
+=back 
+
+=item B<Raw>
+
+It is strongly discouraged to back up databases during operation. This can lead to inconsistencies or destruction of the database when it is restarted after a restore. Exceptions to this are DBMS that explicitly support this procedure and are switched to a backup mode in order to bring the data on the hard disk into a consistent state.
+
+Nevertheless, even DBMSs that do not support such a method have the option of saving raw data consistently.
+
+To achieve this, the underlying file system must support snapshots.
+The procedure is therefore relatively simple:
+
+=over 4
+
+=item 1 Shut down the DBMS.
+
+=item 2 Create a file system snapshot of the raw database data.
+
+=item 3 Put the DBMS back into operation.
+
+=item 4 Mount snapshot read-only.
+
+=item 5 Backup the snapshot's content.
+
+=back
+
+Z<>
+
+=over 4
+
+=item Advantages
+
+=over 2
+
+=item * Depending on the time it takes the DBMS to stop and start, as well as the time it takes to create a file system snapshot, the interruption during which the DBMS is unavailable can be extremely short.
+
+=item * The data can be put into operation immediately after recovery.
+
+=back
+
+=item Disadvantages
+
+=over 2
+
+=item * The data is firmly coupled to the system and the DBMS. It will probably not be compatible with any other system, not even another version of the DBMS.
+
+=item * The file system snapshots may require a lot of disk space.
+
+=item * The file system snapshots may require a lot of CPU power.
+
+=back
+
+=back
+
+=item B<In database snapshots and similar methods>
+
+Some DBMS, such as PostgreSQL®, allow new databases to be created from existing ones. This could be a more performant way of combining the two methods mentioned above.
+
+=back
+
+=head1 RESTORING A BACKUP
+
+Especially in cases where a large backup has to be restored, or where something has to be restored for the first time, this process can be very time-consuming and exhausting. Here are a few approaches and ideas to make the process as easy as possible.
+
+=head2 Disclaimer
+
+B<THIS IS NOT AN EXHAUSTIVE GUIDE TO RESTORING, ONLY SUGGESTIONS AND HINTS. COMPREHENSIVE EXPERTISE MAY BE REQUIRED FOR MANY STEPS. READ THE RELEVANT MANUALS CAREFULLY AND COMPLETELY. ERRORS DURING RECOVERY CAN DAMAGE OR DESTROY A BACKUP. TAKE THE NECESSARY MEASURES TO PREVENT THIS FROM HAPPENING IN THE FIRST PLACE!>
+
+=head2 Single files and directories
+
+This type of backup is where I<safirbu> shines. Recovery takes place with simple on-board tools. The effort involved is minimal and usually no further preparations are necessary, assuming the backup medium and original data storage medium function as intended. If the latter is not the case, the underlying storage medium must first be made operational. Check the manufacturer's manual or the operating system documentation beforehand.
+
+=over 2
+
+=item B<Content only>
+
+Data and folders can be restored using a simple L<scp(1)> command. With the C<-r> switch, this also applies to entire directory trees. However, only the content is restored, acls and other metadata (like xattr) are not restored.
+
+  # Restore some files and folders
+  cd /srv/backups/homecomputer/backup-<date>/home/user && \
+  scp .profile homecomputer:/home/user
+  scp -r Pictures/ homecomputer:/home/user/Pictures
+
+B<WARNING:> This would overwrite existing files and reset them to an older version if applicable. Mabe create a folder named 'restore-20250202' (a date).
+
+=item B<Meta data included>
+
+=over 4
+
+=item B<tar>
+
+In a large company, however, it is usually not enough just to restore the data as such; the original metadata such as permissions, owner, modification time, change time, access time, security contextes, extended attributes (xattr), and more are usually also required.
+
+The easiest way to achieve this is via a floating tarball, see L<tar(1)>:
+
+  # Restore all users' homes
+  cd /srv/backups/dataserver/backup-<date>/home && \
+  tar cf - --acls --selinux --xattrs . | ssh dataserver 'tar xvf - --acls --selinux --xattrs -C /home/.'
+
+Further switches of interest can be found in the L<tar(1)> manual.
+
+B<WARNING:> This would overwrite existing files and reset them to an older version if applicable.
+
+=item B<rsync>
+
+This variant is probably the best, but also the most complicated: reverse the backup command and adapt it to use it for restoring.
+
+The command used to create the backup is located at the beginning of the log, which has the same name as the backup itself, but with the suffix C<.log>, stored at the same location as the backup itself.
+
+To achieve this, the original command is copied, the include, exclude and hardlink options are stripped and the source and target are swapped.
+Note: rsync behaves differently depending on whether a folder is ended with a slash C</> or not. Take good care and test as a precaution. In addition, further path information is added to the source and destination if necessary.
+
+=back
+
+=back
+
+=head2 Whole systems / bare metal restore (BMR)
+
+The worst-case scenario: The whole machine is broken or worse. Part of the backup is also lost, but the data storage devices that were used for I<safirbu> are usable, but the systems that were backed up using them are not. All data must be transferred to a new server, or even the server itself must be restored from the backup. Here are a few things to make this easier: I certainly don't need to reassure you, you have already returned to reading manuals, which means you are already on the right track. Good luck!
+
+=over 2
+
+=item B<Limitations>
+
+I<safirbu> is a data backup system, not a system backup system. However, if the system was backed up as well as the data, this backup could probably be used to restore the original system. However, this will be far more work than with a system backup system, but is usually within the capabilities of Unix systems.
+
+=item B<Possible workarounds>
+
+Due to the nature of things, no data storage medium information is backed up by I<safirbu> as long as it has not somehow been stored as a file.
+
+However, the effort involved can be greatly reduced through preparation. It is best to collect information about data storage media and hardware in a file using S<C<Client Pre Run>>. This can be a great help for a BMR. It can also help to save raw data, e.g. the boot area on the hard disk, as a file from time to time. Same applies to databases. See L</DATABASES>.
+
+Perhaps it would also be simpler and quicker not to restore and rebuild the system itself. Instead, the necessary configurations and data could be transferred to a new system afterwards. If this sounds sufficient, simply continue with the recovery method S<< L</Single files and directories> -> L</Meta data included> >> when ready.
+
+=item B<Necessary preparations>
+
+Assuming a new system is out of the question, the entire system must be restored. These are some basic steps needed:
+
+=over 4
+
+=item 1 Basic system
+
+A boot medium of the same system as the original system is required. The hardware on which the system is to be restored is started with this boot medium and made network-operational. It must be ensured that programs such as L<ssh(1)> and L<rsync(1)> are installed and data storages are mounted with settings comparable to the original system so that all file attributes can be restored correctly.
+
+Check the manual of the operating system.
+
+=item 2 Check the connectivity
+
+Use network tools such as L<ping(1)>, L<telnet(1)>, and others until you can establish a stable connection between the backup server and the system to be restored using L<ssh(1)>. You must also be able to connect to an interactive shell with ssh.
+
+=item 3 Restore of files
+
+Restore data to the target devices. For details see S<L</Single files and directories>> above.
+
+=item 4 Making the operating system operational again
+
+Use L<chroot(1)>, L<mount(8)>, and the manual of the operating system to install the bootloader to the new hard disk.
+
+=item 5 Test!
+
+Test the restored system extensively!
+
+Return to the start medium again and solve any remaining problems until you reach a sufficient level.
+
+=back
+
+=item B<Follow-up>
+
+BACKUP! After the restore is before the restore. And as the saying goes: no backup, no mercy. It is crucial that the newly restored data is also backed up on a regular basis.
+
+=back
+
+=head1 DIRECTORIES AND FILES
+
+For C</etc/safirbu> and C</usr/local/etc/safirbu>, respectively, see B<L<safirbu(5)>>.
+
+=over 2
+
+=item Linux:	B<C</etc/logrotate.d/safirbu>>
+
+=item FreeBSD:	B<C</usr/local/etc/logrotate.d/safirbu>>
+
+Configuration file for configuring logrotate on the safirbu logs.
+
+=item Linux:	B<C</etc/tmpfiles.d/safirbu.conf>>
+
+=item FreeBSD:	B<N/A - Not applying>
+
+Takes care to create the folders B</run/safirbu/backup> and B</var/lock/safirbu.d> on system start. See L<tmpfiles.d(5)> for further details.
+
+=item Linux:	B<C</run/safirbu>>
+
+=item FreeBSD:	B<C</run>>
+
+Default directory for temporary files.
+
+On FreeBSD F</run> should be mounted with F<tmpfs>.
+
+=item Linux:	B<C</run/safirbu/backup>>
+
+=item FreeBSD:	B<C</run/safirbu/backup>>
+
+Recommended B<mount> point for backup drives.
+
+=item Linux:	B<C</sbin/safirbu>>
+
+=item FreeBSD:	B<C</usr/local/sbin/safirbu>>
+
+The safirbu executable itself.
+
+=item Linux:	B<C</usr/share/man/man8/safirbu.8.gz>>
+
+=item FreeBSD:	B<C</usr/local/share/man/man1/safirbu.8.gz>>
+
+The manpage you're just reading.
+
+=item Linux:	B<C</var/lib/safirbu>>
+
+=item FreeBSD:	B<C</var/lib/safirbu>>
+
+Location for libraries, caches, and databases required for proper operation independent of any backup locations.
+
+=item Linux:	B<C</var/lib/safirbu/backup>>
+
+=item FreeBSD:	B<C</var/lib/safirbu/backup>>
+
+Might be used as a mount point as well, but is meant to be used as is, if one wishes to save the backup direct on the server's file system. B<STRONGLY DISCOURAGED FROM DOING SO!>. One should always use some removable devices to interchange and store off-site! Learn more about S<B<Good Backup Practices>>, for example: the S<3-2-1 Backup Strategy>.
+
+=item Linux:	B<C</dev/shm/...safirbu...>>
+
+=item FreeBSD:	B<C</run/...safirbu...>>
+
+Shared main lock file in very fast environment (usually mounted on a F<tmpfs>), especially for inter-process communication and B<GLOBAL RUNS> (L<safirbu-config(5)>). The actual path is decided by S<L<IPC::LockTicket|https://github.com/DomAsProgrammer/perl-IPC-LockTicket> (library),> so the location may vary on your system.
+
+On FreeBSD F</run> should be mounted with F<tmpfs>.
+
+=item Linux:	B<C</var/lock/safirbu.d/*.lck>>
+
+=item FreeBSD:	B<C</var/spool/lock/safirbu.d/*.lck>>
+
+Exclusive locks for the jobs all alone.
+
+=item Linux:	B<C</var/log/safirbu/log>>
+
+=item FreeBSD:	B<C</var/log/safirbu/log>>
+
+Log file of regular logs, independent of main or job. You can trace single jobs by C<grep>-ing the PID a job got. The amount of detail logged can be controlled S<Log Level> setting.
+
+=item Linux:	B<C</var/log/safirbu/jobs/*.err>>
+
+=item FreeBSD:	B<C</var/log/safirbu/jobs/*.err>>
+
+Contains files for single jobs suffixed by C<.err>, documenting output only to STDERR output. Useful, if a job died unexpectedly. Because only empty files are deleted automatically, this directory should be checked on a regular basis.
+
+=back
+
+=begin comment
+
+=head1 TROUBLE SHOOTING
+
+ # WORK
+
+=end comment
+
+=head1 SEE ALSO
+
+B<L<safirbu-config(5)>>, B<L<rsync(1)>>, B<L<du(1)>>, B<L<find(1)>>, B<L<wc(1)>>
+
+=head1 BUGS
+
+If you find any bugs, please report at L<https://github.com/DomAsProgrammer/safirbu>!
+
+=head1 THANKS
+
+Special thanks go out to: Rebecca-Victoria Schmidt who checked any English I wrote.
+
+=head1 AUTHOR
+
+Safirbu is written by Dominik Bernhardt, inspired by Linux In a Nutshell (O'Reilly).
+
+=cut
+

@@ -1,0 +1,165 @@
+## (Lines starting with an # are treated as comments.)
+
+### General configuration
+# These settings apply as long as nothing different is set within
+# the jobs files.
+# Time specific settings overwrite global configs, job's configs
+# overwrite global configs according to times. Some opptions "add
+# up", see safirbu(8) for further details. These are marked as
+# doing so.
+
+# Default backup storage location
+Destination		= "/var/lib/safirbu/backup"
+# How many hours must be between any backups at least (0.5 = 30
+# minutes)
+Space			= "2"
+
+# Output levels
+# Expects an integer
+# Outputs only given and lower.
+# 0 = FATAL, 1 = ERROR, 2 = WARNING,
+# 3 = INFO, 4 = DEBUG, ≥5 = TRACE
+Log Level		= "3"
+Verbosity Level		= "2"
+
+# Path to binaries if not found within $PATH
+#Bin Rsync		= "%BINRSYNC%"
+#Bin Nice		= "%BINNICE%"
+#Bin IONice		= "%BINIONICE%"
+#Bin Du			= "%BINDU%"
+#Bin Find		= "%BINFIND%"
+#Bin Wc			= "%BINWC%"
+
+# Includes and excludes
+# /etc/safirbu/jobs/{include,exclude}s/<job name> will be
+# searched and used if found in any way. The following settings
+# is to add files for this setting which are not following the
+# standard naming. Includes will appear first for rsync.
+#Include From		= ""
+#Exlcude From		= ""
+
+## Applied globally, appending
+# Command/Skript ran on backup server before any sub-command runs
+# at all
+#Global Pre Run		= ""
+# Command/Skript ran on backup server if the Pre Run failed
+#Global Pre Fail	= ""
+# Command/Skript ran on backup server before the actual backup
+# starts
+#Server Pre Run		= ""
+# Command/Skript ran on backup server if the Pre Run failed
+#Server Pre Fail	= ""
+# Command/Skript ran on backup client before the actual backup
+# starts
+#Client Pre Run		= ""
+# Command/Skript ran on backup client if the Pre Run failed
+#Client Pre Fail	= ""
+# Decide what shall happen if the backup fails. Available
+# options: "stop", "fail", "retry", "continue", and
+# "continue_retry" defaults to "stop".
+#Backup Failure Handling	= "stop"
+# Command/Skript ran on backup client after the actual backup
+# ended
+#Client Post Run	= ""
+# Command/Skript ran on backup client if the Post Run failed
+#Client Post Fail	= ""
+# Command/Skript ran on backup server after the actual backup
+# ended
+#Server Post Run	= ""
+# Command/Skript ran on backup server if the Post Run failed
+#Server Post Fail	= ""
+# Command/Skript ran on backup server after all sub-commands
+# finished
+#Global Post Run	= ""
+# Command/Skript ran on backup server if the Post Run failed
+#Global Post Fail	= ""
+
+# Global settings, which apply to all jobs if not declared dif-
+# ferently within job files
+# How many Yearly/Monthly/Weekly/Daily/Hourly backups should be
+# kept? (Integer)
+[Year]
+# When shall the "next" year backup run? (mm-DD-HHMMh, e.g.
+# 01-01-0000h means at Jan. 1st at 12 AM)
+Time Border		= "01-01-0000h"
+Quantity		= "3"
+#Include From		= ""
+#Exlcude From		= ""
+#Server Pre Run		= ""
+#Server Pre Fail	= ""
+#Client Pre Run		= ""
+#Client Pre Fail	= ""
+#Backup Failure Handling	= "stop"
+#Client Post Run	= ""
+#Client Post Fail	= ""
+#Server Post Run	= ""
+#Server Post Fail	= ""
+
+[Month]
+# When shall the "next" month backup run? (DD-HHMMh, e.g.
+# 01-0000h means every month at 1st at 12 AM, if the given day is
+# later than the month has days, it will use the last day of
+# month.)
+Time Border		= "01-0000h"
+Quantity		= "6"
+#Include From		= ""
+#Exlcude From		= ""
+#Server Pre Run		= ""
+#Server Pre Fail	= ""
+#Client Pre Run		= ""
+#Client Pre Fail	= ""
+#Backup Failure Handling	= "stop"
+#Client Post Run	= ""
+#Client Post Fail	= ""
+#Server Post Run	= ""
+#Server Post Fail	= ""
+
+[Week]
+# When shall the "next" week backup run? (N-HHMMh, N Number is
+# between 0-7 where 0=7=Sun, eg. 5-0000h is Friday 12 AM.)
+Time Border		= "5-0000h"
+Quantity		= "8"
+#Include From		= ""
+#Exlcude From		= ""
+#Server Pre Run		= ""
+#Server Pre Fail	= ""
+#Client Pre Run		= ""
+#Client Pre Fail	= ""
+#Backup Failure Handling	= "stop"
+#Client Post Run	= ""
+#Client Post Fail	= ""
+#Server Post Run	= ""
+#Server Post Fail	= ""
+
+[Day]
+# When shall the "next" day backup run? (HHMMh or HH:MM, e.g.
+# 0000h or 00:00)
+Time Border		= "0000h"
+Quantity		= "10"
+#Include From		= ""
+#Exlcude From		= ""
+#Server Pre Run		= ""
+#Server Pre Fail	= ""
+#Client Pre Run		= ""
+#Client Pre Fail	= ""
+#Backup Failure Handling	= "stop"
+#Client Post Run	= ""
+#Client Post Fail	= ""
+#Server Post Run	= ""
+#Server Post Fail	= ""
+
+[Hour]
+# When shall the "next" hour backup run? (MMm, e.g. 00m for full
+# hours)
+Quantity		= "5"
+#Include From		= ""
+#Exlcude From		= ""
+#Server Pre Run		= ""
+#Server Pre Fail	= ""
+#Client Pre Run		= ""
+#Client Pre Fail	= ""
+#Backup Failure Handling	= "stop"
+#Client Post Run	= ""
+#Client Post Fail	= ""
+#Server Post Run	= ""
+#Server Post Fail	= ""

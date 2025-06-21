@@ -1,0 +1,12 @@
+/var/log/safirbu/log {
+	rotate 25
+	size 10M
+	missingok
+	notifempty
+	create 640 root wheel
+	dateext
+	compress
+	compresscmd /bin/xz
+	compressext .xz
+	compressoptions -9 -e
+}

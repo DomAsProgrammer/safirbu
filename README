@@ -1,0 +1,154 @@
+## TABLE OF CONTENTS
+
+1. What is safirbu?
+2. What is safirbu not?
+3. Dependencies
+4. Installation
+5. Configuration for compiler
+6. Removal
+7. Operating systems
+8. Author
+
+### 1. WHAT IS SAFIRBU?
+Safirbu is primarily intended as a file backup solution.  It is a professional
+config file based wrapper around rsync to create backups using the rsync's
+hardlink function to reduce required space by hardlinking unchanged files. It
+also uses du, wc, and find to collect statistics of the created backups.
+It is mainly a file backup solution.
+Its strength is especially the use of every-day programs on client side: The
+most basic setup is rsync, ssh and a pre-shared key. With these prerequisites,
+the backup server can access the client without human intervention. Furthermore,
+Safirbu has mechanisms for executing ssh and local commands before, after, and
+in case of failed backups.
+
+### 2. WHAT IS SAFIRBU NOT?
+It is not an end-user friendly GUI based backup solution.
+Also it is not an all-purpose solution nor is it a full fledged all-around
+solution either. Is is not a bare-metal restore solution. (While it may be used
+to complete such one AFTER a bare-metal restore.)
+
+### 3. DEPENDENCIES
+Especially when installed as raw Perl script, many dependencies are required to
+be runnable. See a full list below. For a suggestion on how to satisfy these
+dependencies, refer to next chapter. However, if running on an Enterprise Linux
+9 (e.g. Red Hat Enterprise Linux or RHEL based) or FreeBSD 14 one can find
+compilation instructions in the packageing directory "p".
+
+#### LIST OF DEPENDENCIES
+  - rsync
+  - du
+  - find
+  - wc
+
+#### LIST OF BUILD DEPENDENCIES
+  - perl
+  - bash (FreeBSD)
+  - gmake (FreeBSD)
+
+#### PERL LIBRARIES
+  - Time::Piece
+  - File::Basename
+  - POSIX
+  - Term::ANSIColor
+  - Cwd
+  - Getopt::Long
+  - Net::OpenSSH
+  - File::Path
+  - DBI
+  - DBD::SQLite
+  - Encode
+  - Time::Local
+  - Log::Log4perl
+  - IPC::LockTicket
+  - PAR::Packer (Build)
+
+IPC::LockTicket can also be found at
+https://github.com/DomAsProgrammer .
+
+### 4. INSTALLATION AND UPDATES WITHOUT PACKAGE MANAGER
+It is recommended to use the compiled version. To update, just install the new
+version with the same configuration again.
+
+Linux:
+  ./configure # Don't do this again for updates!
+  make
+  make test
+  sudo make install
+
+On FreeBSD one would use the following:
+  ./configure
+  gmake
+  su -c 'gmake install' root
+
+To check for the dependencies, one can run `make test` within the package's root
+folder.
+It is recommended to run `make config` without options.
+Use `make installraw` to install the native Perl version. This will only succeed
+if all dependencies are satisfied. `make` is unnecessary in this case.
+
+Some suggestions on how to satisfy some dependencies:
+To get the required Perl version one may check out
+https://perlbrew.pl/ .
+Continue via install-cpanm and cpanm the missing dependencies.
+For IPC::LockTicket go to https://github.com/DomAsProgrammer and download the
+tarball. If the default build doesn't work out as expected, check Perl's default
+search pathes (@INC) via perl -V and place the LockTicket.pm within one of these
+folders into a subfolder named IPC. If `make test` runs through `make
+installraw` will as well and safirbu should be ready to use.
+
+## About ./configure
+
+The configure script requires Bash. It accepts four options, some of which
+require arguments. More details about these now:
+  -b         > Sets installation pathes like the OS defaults. Use this and -i
+               for building packages.
+  -d <Path>  > Use a custom installation path like /opt/safirbu-<version> or
+               /usr/local/safirbu-<ver>
+  -i <Path>  > Like chroot - use this and -b for building packages.
+  -p <Path>  > Reflects and overwrites the PERLBREW_ROOT used to compile using
+               perlbrew. Expects bin/perlbrew. Useful if not wanted to compile
+               the whole Perl multiple times: Can be used to set a custom
+               destination outside the work/ directory to prevent deletion
+               by `make clean`.
+               Be warned: This will install libraries into the main perlbrew
+               Perl build.
+
+Notes:
+- -b XOR -d: Only one works! (And overwrites the other.)
+- -i XOR -d: The -d overwrites -i.
+- Building packages (RHEL: .rpm, FreeBSD: .pkg) best practice is using
+  `./configure -b -i $RPM_BUILD_ROOT`.
+- `perlbrew lib ...` is NOT working!
+
+### 5. CONFIGURATION FOR COMPILER
+Linux: Install the group 'Development Tools' and place p/RHEL/safirbu.spec at
+~/rpmbuild/SPECS . The following commands need a little adjustment, but should
+do the trick:
+  dnf groupinstall -y --with-optional 'Development Tools'
+  rpmdev-setuptree # Now ~/rpmbuild is created
+  cp safirbu-<ver>/p/RHEL/safirbu.spec ~/rpmbuild/SPECS
+  rpmbuild -bb ~/rpmbuild/SPECS/safirbu.spec
+
+FreeBSD: Copy p/FreeBSD/sysutils/safirbu to /usr/ports/sysutils .
+Create a distinfo and package or install. Simple steps:
+  cp -r p/FreeBSD/sysutils/safirbu /usr/ports/sysutils
+  cd /usr/ports/sysutils
+  make makesum # The sum can't be placed into the package
+  make install # OR make package
+
+### 6. REMOVAL
+There is a `make clean` which will clean up the configuration made before as
+well as the compiled version, if existing.
+
+To uninstall Safirbu there should be a bin/UninstallSafirbu.sh , except when a
+package was built. In this case, the distribution's package manager shall handle
+this. See dnf(8) or pkg(8) for details.
+
+### 7. OPERATING SYSTEMS
+The installer is primarily prepared for Linux (esp. RHEL). many things are
+prepared for FreeBSD as well, but it will be required to use gmake instead of
+FreeBSD's make and bash instead of sh.
+
+### 8. AUTHOR
+Dominik Bernhardt, July 2024
+domasprogrammer@gmail.com

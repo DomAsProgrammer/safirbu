@@ -1,0 +1,13 @@
+S.A.F.I.R.B.U. is a apronym for 'Solution for Automatic Full Incremental Remote
+Backup on Unix'.
+
+Safirbu is a professional config file based wrapper around rsync to create
+backups using the hardlink function to reduce required space by hardlinking
+unchanged files. It also uses du, wc, and find to collect statistics of the
+formerly made backups, if used.
+It is mainly a file backup solution.
+Its strength is especially the use of every-day programs on client side: The
+most basic setup is rsync, ssh and a pre-shared key, so the backup server can
+access it without human interference, and it has mechanisms for executing ssh
+and local commands before, after, and in case of failed backups or failed
+commands, run before the backup.

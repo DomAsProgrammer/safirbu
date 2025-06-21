@@ -1,0 +1,6 @@
+bin        - Code for binary
+man        - Source of and builds of manpages.
+p          - Packaging; files reqired to make a package for package managers.
+s          - Scriptlets; additional tasks, to complex for pure make.
+t          - Tests; scripts for testing environments and compiling.
+templates  - Templates; will be copied to the correct locations when installing.

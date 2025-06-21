@@ -1,0 +1,110 @@
+# $1/COMP_WORDS[0] = safirbu{,pl}
+# $2 = <current word>
+# $3 = <the word before $2>
+# COMP_WORDS = <array of current command line>
+# COMP_CWORD = <current cursor position in COMP_WORDS>
+# job file suffixes qr{^\.(job|cfg|conf(ig(uration)?)?)$}in
+
+function _safirbu() {
+	local -a _dynamic_list
+	local os_ident
+	os_ident=$(uname)
+	_dynamic_list=("-h" "--help" "-u" "--usage")
+	COMPREPLY=()
+
+	# First argument is fixed
+	if [ $COMP_CWORD -eq 1 ] ; then
+		COMPREPLY+=( $( compgen -W "${_dynamic_list[*]} backup size backup,size size,backup list create show" -- ${COMP_WORDS[$COMP_CWORD]} ) )
+		return
+		fi
+
+	# Second argument is optional
+	if [ $COMP_CWORD -eq 2 ] ; then
+		if [ "${COMP_WORDS[1]}" == "backup" ] ; then
+			_dynamic_list+=("size")
+		elif [ "${COMP_WORDS[1]}" == "size" ] ; then
+			_dynamic_list+=("backup")
+			fi
+		fi
+
+	if [ "${COMP_WORDS[1]}" != "create" ] ; then
+		echo "WORK" > /dev/null # Also allow to select regular files
+		fi
+
+	# Load configs' names
+	if [ $COMP_CWORD -gt 1 ] ; then
+		local _searchpath _inode
+		local -a _found
+
+#		local _i
+#		echo -en "DEBUG START\n1=:'$1'\n2=:'$2'\n3=:'$3'\nCOMP_CWORD=:'$COMP_WORDS'\n"
+#		for _i in "${COMP_WORDS[@]}" ; do
+#			echo $_i
+#			done
+#		echo -en 'DEBUG END\n\n'
+
+		if [ "$3" == "--unit" ] || [ "$3" == "--units" ] ; then
+			COMPREPLY+=( $( compgen -W "K M G T k m g t b" -- ${COMP_WORDS[$COMP_CWORD]} ) )
+			return
+		# Help and Usage block any further options or arguments
+		elif [ -n "$(echo -n "$3" | grep -E '(^-h$|^-u$|--help|--usage)')" ] || [ -n "$(echo -n "$3" | grep -E '^--(dest(ination)?|(host|dns)(name)?|ip(v?[46]?)?|(year|month|week|day|hour)s?|space|(time)?border|(client|server)-?(pre|post)(run|fail))$')" ] || [ "$3" == "--source" ] || [ "$3" == "--destination" ] || [ "$3" == "--hostname" ] || [ "$3" == "--dnsname" ] || [ "$3" == "--ip" ] || [ "$3" == "-S" ] || [ "$3" == "--source" ] || [ "$3" == "--rsync" ] || [ "$3" == "--nice" ] || [ "$3" == "--ionice" ] || [ "$3" == "--du" ] || [ "$3" == "--find" ] || [ "$3" == "--wc" ] ; then
+			compopt -o default -o bashdefault
+			return
+			fi
+
+		if [ "$os_ident" == "Linux" ] && [ "$(dirname $(which "${COMP_WORDS[0]}"))" == "/usr/sbin" ] ; then
+			_searchpath=/etc/safirbu/jobs
+		elif [ "$os_ident" == "FreeBSD" ] && [ "$(dirname $(which "${COMP_WORDS[0]}"))" == "/usr/local/sbin" ] ; then
+			_searchpath=/usr/local/etc/safirbu/jobs
+			fi
+
+		if [ -d "$_searchpath" ] ; then
+			IFS=$'\n'
+			for i in $(find $_searchpath -maxdepth 1 -iregex '.+\.\(job\|cfg\|conf\(ig\(uration\)?\)?\)$' ) ; do
+				_found+=($(basename $i))
+				done
+			unset IFS
+
+			for _inode in "${_found[@]}" ; do
+				_dynamic_list+=( $(echo "$_inode" | sed -E 's/\.[^.]+$//') )
+				done
+			fi
+
+		if [ "${COMP_WORDS[1]}" == "list" ] ; then
+			_dynamic_list+=("--select" "--units" "--batch")
+		elif [ "${COMP_WORDS[1]}" == "create" ] ; then
+			_dynamic_list+=(
+				"--destination"
+				"--hostname" "--dnsname"
+				"--ip"
+				"-S" "--source"
+				"--rsync"
+				#"--nice"
+				#"--ionice"
+				#"--du"
+				#"--find"
+				#"--wc"
+				)
+		elif [ "${COMP_WORDS[1]}" == "backup" ] || [ "${COMP_WORDS[2]}" == "backup" ] || [ "${COMP_WORDS[1]}" == "size" ] || [ "${COMP_WORDS[1]}" == "backup,size" ] || [ "${COMP_WORDS[1]}" == "size,backup" ] || [ "${COMP_WORDS[2]}" == "size" ] ; then
+			_dynamic_list+=(
+				"-p" "--parallel"
+				"-w" "--wait"
+				"-f" "--fast"
+				"-n" "--nice-client"
+				"-N" "--nice-server"
+				"--noprotect"
+				"--protect"
+				"--noping"
+				"--ping"
+				)
+			fi
+
+		# Base switches
+		_dynamic_list+=("-v" "--verbose" "-l" "--loglevel")
+		fi
+
+	compopt -o default -o bashdefault
+	COMPREPLY+=( $( compgen -W "${_dynamic_list[*]}" -- ${COMP_WORDS[$COMP_CWORD]} ) )
+	}
+
+complete -F _safirbu safirbu.pl safirbu
