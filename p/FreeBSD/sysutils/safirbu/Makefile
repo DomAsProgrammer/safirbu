@@ -6,8 +6,8 @@ DISTVERSION=	0.20
 #ISCVERSION=	${DISTVERSION}${DISTVERSIONSUFFIX}
 
 CATEGORIES=	sysutils
-MASTER_SITES=	https://github.com/DomAsProgrammer/${PORTNAME}/
-#MASTER_SITES=	${MASTER_SITE_GH}
+MASTER_SITES=   https://github.com/DomAsProgrammer/${PORTNAME}/raw/refs/heads/main/
+#MASTER_SITES=	https://github.com/DomAsProgrammer/${PORTNAME}/
 #DISTNAME=	${PORTNAME} # Shall not be overwritten. By BSDoc 5.4.1
 EXTRACT_SUFX=	.tar.xz
 MAINTAINER=	domasprogrammer@gmail.com
