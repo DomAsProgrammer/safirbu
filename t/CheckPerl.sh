@@ -3,7 +3,7 @@
 
 verperl=
 binperl=`which perl 2> /dev/null`
-reqperl="v5.40.2"
+reqperl="v5.42.0"
 
 if [ -n "$binperl" ] ; then
 	perl -e 'use strict; use warnings;
@@ -40,12 +40,12 @@ if [ -n "$binperl" ] ; then
 			if [ -n "$(echo $verperl | awk -F. '{print $3}')" ] && [ $(echo $verperl | awk -F. '{print $3}') -ge 0 ] ; then
 				exit 0
 			else
-				echo 'Perl v5.40.2 or higher is required!' 1>&2
+				echo 'Perl v5.42.0 or higher is required!' 1>&2
 				echo "Got only v$verperl ." 1>&2
 				exit 1
 				fi
 		else
-			echo 'Perl v5.40.2 or higher is required!' 1>&2
+			echo 'Perl v5.42.0 or higher is required!' 1>&2
 			echo "Got only v$verperl ." 1>&2
 			exit 1
 			fi

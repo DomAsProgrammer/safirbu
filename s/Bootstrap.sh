@@ -14,7 +14,7 @@ cmd_Shell=''
 
 # Perlbrew environment
 uri_Perl="$(which perl)"
-ver_PerlVersion='5.40.2'
+ver_PerlVersion='5.42.0'
 cmd_PerlbrewWithPerlVersion="perlbrew exec --with perl-${ver_PerlVersion}"
 uri_PerlbrewLink='https://install.perlbrew.pl'
 #export PERLBREW_ROOT="${uri_WorkDir}/perlbrew"
@@ -25,6 +25,7 @@ source_file="${PERLBREW_ROOT}/etc/bashrc"
 # Public libs
 str_PerlLibs='Term::ANSIColor utf8 Time::Piece File::Basename POSIX Cwd Data::Dumper Getopt::Long File::Path DBI DBD::SQLite Encode Time::Local Log::Log4perl String::CRC32 Text::CSV Text::CSV_XS PAR::Packer Net::Ping Net::OpenSSH'
 # Lib::Name@flt_Version
+declare -A ver_PerlLibs=()
 #declare -A ver_PerlLibs=(["Net::OpenSSH"]="0.84" ["DBI"]="1.647" ["DBD::SQLite"]="1.76" ["Log::Log4perl"]="1.57" ["Text::CSV"]="2.06" ["Text::CSV_XS"]="1.60" ["PAR::Packer"]="1.063")
 str_MissingPerlLibs=''
 

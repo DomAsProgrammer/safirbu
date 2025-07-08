@@ -1,5 +1,5 @@
 Name: safirbu
-Version: 0.20
+Version: 0.21
 Release: 1%{?dist}
 Summary: Solution for Automatic Full Incremental Remote Backup on Unix
 
@@ -8,7 +8,6 @@ BuildArch: %{_arch}
 License: SAFIRBU License
 URL: https://github.com/DomAsProgrammer
 Source0: https://github.com/DomAsProgrammer/%{name}/raw/refs/heads/main/%{name}-%{version}.tar.xz
-#Source0: https://github.com/DomAsProgrammer/perl-IPC-LockTicket/raw/refs/heads/main/IPC-LockTicket-2.13.tar.xz
 
 BuildRequires: perl
 BuildRequires: tar
@@ -87,5 +86,7 @@ make install
 %dir /var/log/safirbu/jobs
 
 %changelog
+* Sat Jul 05 2025 Dominik Bernhardt <domasprogrammer@gmail.com> - 0.21
+- Simple improvements on download and build for FreeBSD.
 * Sun Mar 30 2025 Dominik Bernhardt <domasprogrammer@gmail.com> - 0.20
 - Inital build of public beta version.

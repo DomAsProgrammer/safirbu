@@ -6,7 +6,7 @@
 	create 640 root wheel
 	dateext
 	compress
-	compresscmd /bin/xz
+	compresscmd xz
 	compressext .xz
 	compressoptions -9 -e
 }

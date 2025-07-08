@@ -28,7 +28,7 @@ path_du:=$(shell which du 2> /dev/null)
 path_find:=$(shell which find 2> /dev/null)
 path_wc:=$(shell which wc 2> /dev/null)
 path_man:=$(shell which man 2> /dev/null)
-cmdPerlbrew:=$(shell echo ". \"$(_PERLBREW_ROOT)/etc/bashrc\" && perlbrew exec --with perl-5.40.2")
+cmdPerlbrew:=$(shell echo ". \"$(_PERLBREW_ROOT)/etc/bashrc\" && perlbrew exec --with perl-5.42.0")
 
 all: bootstrap build test
 
@@ -306,9 +306,9 @@ else
 endif
 
 # Uninstaller
-ifeq (,$(uriUninstaller))
+ifneq (,$(uriUninstaller))
 	@# Must wait until now to have the correct file specifications
-	"$(_PERLBREW_ROOT)/perls/perl-5.40.2/bin/perl" s/BuildUninstaller.pl "$(uriSafirbuConfig)"
+	"$(_PERLBREW_ROOT)/perls/perl-5.42.0/bin/perl" s/BuildUninstaller.pl "$(uriSafirbuConfig)"
 	install -m 4500 "$(uriWorkDir)/UninstallSafirbu.sh" "$(uriUninstaller)"
 else
 	@echo "Uninstaller not required." >/dev/null

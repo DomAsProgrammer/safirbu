@@ -1,12 +1,12 @@
 PORTNAME=	safirbu
-DISTVERSION=	0.20
+DISTVERSION=	0.21
 #PORTREVISION=	# Port/Makefile version
 
 # As long as the program has beta status this is the version given for dist packages.
 #ISCVERSION=	${DISTVERSION}${DISTVERSIONSUFFIX}
 
 CATEGORIES=	sysutils
-MASTER_SITES=   https://github.com/DomAsProgrammer/${PORTNAME}/raw/refs/heads/main/
+MASTER_SITES=	https://github.com/DomAsProgrammer/${PORTNAME}/raw/refs/heads/main/
 #MASTER_SITES=	https://github.com/DomAsProgrammer/${PORTNAME}/
 #DISTNAME=	${PORTNAME} # Shall not be overwritten. By BSDoc 5.4.1
 EXTRACT_SUFX=	.tar.xz

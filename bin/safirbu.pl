@@ -73,7 +73,11 @@
 	Tests are done. Ready for productive tests.
 
 	v0.20
-	Manuals are finished. Final Perl: v5.40.2
+	Manuals are finished. Current Perl: v5.40.2
+
+	v0.21
+	Simple improvements on download and build for FreeBSD.
+	Current Perl: v5.42.0
 
 =end version_history
 
@@ -173,8 +177,6 @@ use Net::Ping;
 ### MetaCPAN
 use Log::Log4perl qw( :easy );	# writes to manually configured log files
 use String::CRC32;
-#use boolean;	# replaced by builtin since v5.40.0
-#use Variable::Alias qw( alias );
 #use Sys::Syslog;	# writes to messages/journalctl
 #use Curses::UI;
 
@@ -212,7 +214,7 @@ use constant {
 my ($str_AppName, $uri_AppPath)		= fileparse(realpath($0), qr{\.[^.]+$});	# Should now be something like uri_AppPath:=/usr/sbin/
 (undef, $uri_AppPath)			= fileparse($uri_AppPath =~ s{/+$} {}r, qr{\.[^.]+$});	# Now it should be uri_AppPath:=/usr/
 $uri_AppPath				=~ s{/+$} {}; # e.g. uri_AppPath:=/usr
-my $ver_AppVersion			= q{v0.20};
+my $ver_AppVersion			= q{v0.21};
 our $VERSION				= $ver_AppVersion;
 my $flt_MinPerlVersion			= q{5.040002};		# $] but needs to be stringified!
 my $ver_MinPerlVersion			= q{v5.40.2};		# $^V - nicer to read
@@ -327,6 +329,7 @@ my $rxp_TagJob				= qr{\Q%JOB%\E};
 my $rxp_TagPath				= qr{\Q%PATH%\E};
 my $rxp_TagDestination			= qr{\Q%DESTINATION%\E};
 my $rxp_TagLast				= qr{\Q%LAST%\E};
+my $rxp_SizeKey				= qr{^int_(Delta)?Size$}i;
 
 ## Defaults
 # System's applications
@@ -1393,6 +1396,20 @@ ORDER BY time};
 
 
 ##### S U B F U N C T I O N S #####
+sub NormalizePath {
+	TRACE(do { my $are_Args = \@_ ; sub { return(q{Start: } . Dumper({ are_Args => $are_Args })); } });
+	my $str_Element		= shift;
+
+	if ( $str_Element !~ m{$rxp_OnlySlashes} ) {
+		$str_Element	=~ s{$rxp_EndingSlashes} {};
+		}
+	$str_Element		=~ s{$rxp_Slashes} {/};
+
+	DEBUG(qq{Returning data: "$str_Element"});
+
+	return($str_Element);
+	}
+
 sub ShellQuote {
 	TRACE(do { my $are_Args = \@_ ; sub { return(q{Start: } . Dumper({ are_Args => $are_Args })); } });
 	my @str_Elements	= @_;
@@ -1407,8 +1424,7 @@ sub ShellQuote {
 			next(lop_Quoting);
 			}
 
-		$str_Argument		=~ s{$rxp_EndingSlashes} {};
-		$str_Argument		=~ s{$rxp_Slashes} {/}g;
+		$str_Argument		= NormalizePath($str_Argument);
 
 		if ( $str_Argument =~ m{$rxp_UnwantedCharsQuoting} ) {
 			TRACE(q{Found unwanted characters.});
@@ -1426,7 +1442,7 @@ sub ShellQuote {
 			}
 		}
 
-	DEBUG(qq{Got data: "@str_Elements"});
+	DEBUG(qq{Returning data: "@str_Elements"});
 
 	return(qq{@str_Elements});
 	}
@@ -3412,8 +3428,7 @@ sub GetBackupDirectories {
 	&& opendir(my $dsc_DirectoryHandle, $uri_JobDirectory) ) {
 		while ( my $str_Name = readdir($dsc_DirectoryHandle) ) {
 			my $uri_Path	= qq{$uri_JobDirectory/$str_Name};
-			$uri_Path	=~ s{$rxp_EndingSlashes} {};
-			$uri_Path	=~ s{$rxp_Slashes} {/}g;
+			$uri_Path	= NormalizePath($uri_Path);
 
 			TRACE(qq{Processing "$uri_Path".});
 
@@ -3645,6 +3660,7 @@ sub BackupAndSize {
 			. ( $har_JobsConfigs{$str_Job}{har_Config}{_}{niceclient}[0]
 				? q{which nice 2>/dev/null || echo ; }
 					. q{which ionice 2>/dev/null || echo }
+					. q{uname -s || echo }
 				: '' );
 		my $har_ReturnData		= RunCommandRemotely($har_JobsConfigs{$str_Job}{_str_Remote}, $cmd_Remotely);
 		my $bol_Return			= true;
@@ -3672,10 +3688,23 @@ sub BackupAndSize {
 			else {
 				FATAL(qq{No rsync found on '$har_JobsConfigs{$str_Job}{_str_Remote}' (for job '$str_Job').});
 
-				$bol_Return	= false;
+				$bol_Return			= false;
 				}
 
 			if ( $har_JobsConfigs{$str_Job}{har_Config}{_}{niceclient}[0] ) {
+				my $str_RemoteSystemType	= undef;
+
+				# System
+				if ( $har_ReturnData->{are_ReturnData}[4] ) {
+					DEBUG(qq{Remote system looks like a '$har_ReturnData->{are_ReturnData}[4]'.});
+
+					$str_RemoteSystemType	= $har_ReturnData->{are_ReturnData}[4];
+					}
+				else {
+					WARN(qq{Got no reply from `uname -s`.});
+
+					$str_RemoteSystemType	= '';
+					}
 
 				# Nice
 				if ( $har_ReturnData->{are_ReturnData}[2] ) {
@@ -3684,7 +3713,7 @@ sub BackupAndSize {
 				else {
 					FATAL(qq{No nice found on '$har_JobsConfigs{$str_Job}{_str_Remote}' (for job '$str_Job').});
 
-					$bol_Return	= false;
+					$bol_Return		= false;
 					}
 
 				# IONice
@@ -3692,9 +3721,14 @@ sub BackupAndSize {
 					DEBUG(qq{Found remote ionice at '$har_JobsConfigs{$str_Job}{_str_Remote}:$har_ReturnData->{are_ReturnData}[3]'.});
 					}
 				else {
-					FATAL(qq{No ionice found on '$har_JobsConfigs{$str_Job}{_str_Remote}' (for job '$str_Job').});
+					if ( fc($str_RemoteSystemType) ne fc(q{FreeBSD}) ) {
+						FATAL(qq{No ionice found on '$har_JobsConfigs{$str_Job}{_str_Remote}' (for job '$str_Job').});
 
-					$bol_Return	= false;
+						$bol_Return	= false;
+						}
+					else {
+						INFO(qq{FreeBSD has no ionice.});
+						}
 					}
 				}
 			}
@@ -4277,8 +4311,7 @@ sub BackupAndSize {
 
 		lop_BackupSources:
 		foreach my $uri_Source ( @{$har_JobsConfigs{$str_Job}{har_Config}{$har_JobsConfigs{$str_Job}{_str_NextGeneration}}{source}} ) {
-			$uri_Source			=~ s{$rxp_EndingSlashes} {};
-			$uri_Source			=~ s{$rxp_Slashes} {/}g;
+			$uri_Source			= NormalizePath($uri_Source);
 			my $uri_SimpleSource		= $uri_Source =~ s{$rxp_RemoveLeadingChars} {}gr;
 			my @cmd_Backup			= ();
 			my $int_ReturnCode		= undef;
@@ -4325,7 +4358,6 @@ sub BackupAndSize {
 			elsif ( $har_JobsConfigs{$str_Job}{har_Config}{_}{destination}[0] ) {
 					my $uri_LocalDest	= $har_JobsConfigs{$str_Job}{har_Config}{_}{destination}[0] . '';
 					$uri_LocalDest		=~ s{$rxp_LeadingSlash} {};
-					$uri_LocalDest		=~ s{$rxp_EndingSlashes} {};
 					$uri_LocalDest		=~ s{$rxp_EndingSlashes} {/*};
 
 					TRACE(qq{Job is for localhost, adding "$uri_LocalDest" to exclude list.});
@@ -4424,7 +4456,7 @@ sub BackupAndSize {
 				$uri_SourcePrep		=~ s{$rxp_Slashes} {/};		# Make plurals to singulars
 				$uri_SourcePrep		=~ s{$rxp_EndingSlashes} {/};	# Source must have an ending slash
 				#									hostname / IP address				nothing (localhost)
-				push(@cmd_Backup, ( defined($har_JobsConfigs{$str_Job}{_str_Remote}) ? qq{$har_JobsConfigs{$str_Job}{_str_Remote}:} : '' ) . ShellQuote($uri_SourcePrep));
+				push(@cmd_Backup, ( ( defined($har_JobsConfigs{$str_Job}{_str_Remote}) ? qq{$har_JobsConfigs{$str_Job}{_str_Remote}:} : '' ) . ShellQuote($uri_SourcePrep) ));
 				}
 
 			lop_SpecificDestination: {
@@ -4781,7 +4813,8 @@ sub BackupAndSize {
 			my @cmd_NULLtemplate	= ( q{echo "NULL"} );
 			my @cmd_ZeroTemplate	= ( q{echo "0"} );
 			my @cmd_NiceTemplate	= ();
-			my @cmd_DuTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{bindu}[0]), q{-b -s} );	# we do not want --apparent-size, so we get the real size on disk
+			#														freebsd    linux
+			my @cmd_DuTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{bindu}[0]), ( $^O eq q{freebsd} ? q{-A -s} : q{-b -s} ) );	# we want --apparent-size, so we get the real size on disk
 			my @cmd_FindPreTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{binfind}[0]) );
 			my @cmd_WcPostTemplate	= ( q{|}, ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{binwc}[0]), q{-l} );
 			my $uri_FormerSPath	= '';
@@ -5305,6 +5338,12 @@ sub BackupAndSize {
 							if ( defined($str_PercentName{$int_Part}) ) {
 								TRACE(sprintf(q{Setting %s:=%s.}, $str_PercentName{$int_Part}, ( defined($int_Value) ? qq{"$int_Value"} : q{NULL} )));
 								$har_ToSize[$int_Index]{$str_PercentName{$int_Part}}		= $int_Value;
+
+								# FreeBSD's du gives us the count of 512-byte blocks.
+								if ( $^O eq q{freebsd}
+								&& $str_PercentName{$int_Part} =~ m{$rxp_SizeKey} ) {
+									$har_ToSize[$int_Index]{$str_PercentName{$int_Part}}	*= 512;
+									}
 								}
 							}
 
@@ -6382,7 +6421,7 @@ sub CreateConfigurationFile {
 
 	TRACE(q{Checking source.});
 	if ( $uri_RsyncSourceLocation ) {
-		$har_Fitting{source}{str_Value}		= $uri_RsyncSourceLocation =~ s{$rxp_EndingSlashes} {}gr;
+		$har_Fitting{source}{str_Value}		= NormalizePath($uri_RsyncSourceLocation);
 
 		TRACE(q{Loaded from command line.});
 		}

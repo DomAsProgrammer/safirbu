@@ -8,7 +8,7 @@
 function _safirbu() {
 	local -a _dynamic_list
 	local os_ident
-	os_ident=$(uname)
+	os_ident=$(uname -s)
 	_dynamic_list=("-h" "--help" "-u" "--usage")
 	COMPREPLY=()
 
@@ -60,7 +60,7 @@ function _safirbu() {
 
 		if [ -d "$_searchpath" ] ; then
 			IFS=$'\n'
-			for i in $(find $_searchpath -maxdepth 1 -iregex '.+\.\(job\|cfg\|conf\(ig\(uration\)?\)?\)$' ) ; do
+			for i in $(find $_searchpath -maxdepth 1 -iname '*.job' -or -iname '*.cfg' -or -iname '*.conf' -or -iname '*.config' -or -iname '*.configuration' ) ; do
 				_found+=($(basename $i))
 				done
 			unset IFS

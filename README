@@ -136,8 +136,6 @@ Create a distinfo and package or install. Simple steps:
   make makesum # The sum can't be placed into the package
   make install # OR make package
 
-Note: if you encounter issues while running `make makesum`, download the bare folder from github, it's already corrected, but the tarball's Makefile is not.
-
 ### 6. REMOVAL
 There is a `make clean` which will clean up the configuration made before as
 well as the compiled version, if existing.

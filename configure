@@ -44,7 +44,7 @@ while getopts "bd:p:i:hu" option ; do
 		p)
 			if [ -e "$OPTARG/bin/perlbrew" ] ; then
 				PERLBREW_ROOT="$OPTARG"
-				echo -e "WARNING: This will install perl-5.40.2 and several libraries without \`perlbrew lib create ...\` into your perlbrew environment." 1>&2
+				echo -e "WARNING: This will install perl-5.42.0 and several libraries without \`perlbrew lib create ...\` into your perlbrew environment." 1>&2
 			else
 				echo "Missing '$OPTARG/bin/perlbrew'." 1>&2
 				exit 2
