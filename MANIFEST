@@ -10,6 +10,7 @@ man/man5.pod
 man/man8.pod
 man/safirbu.5.xz
 man/safirbu.8.xz
+p/FreeBSD/sysutils/safirbu/files/pkg-message.in
 p/FreeBSD/sysutils/safirbu/Makefile
 p/FreeBSD/sysutils/safirbu/pkg-descr
 p/FreeBSD/sysutils/safirbu/pkg-plist

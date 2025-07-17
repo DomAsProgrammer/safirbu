@@ -1,5 +1,5 @@
 PORTNAME=	safirbu
-DISTVERSION=	0.21
+DISTVERSION=	0.22
 #PORTREVISION=	# Port/Makefile version
 
 # As long as the program has beta status this is the version given for dist packages.
@@ -22,6 +22,8 @@ LICENSE_FILE=	${WRKSRC}/LICENCE.md
 PORTSCOUT=	site:https://github.com/DomAsProgrammer/
 
 RUN_DEPENDS=	rsync:net/rsync
+
+PKGMESSAGE= ${FILESDIR}/pkg-message.in
 
 # System apps
 #RUN_DEPENDS=	find

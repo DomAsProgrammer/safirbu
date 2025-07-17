@@ -81,8 +81,8 @@ use Cwd qw(realpath);
 ### Defaults
 my ($strAppName, $uriAppPath)		= fileparse(realpath($0), qr/\.[^.]+$/);
 my $verAppVersion			= q{0.1};
-my $fltMinPerlVersion			= q{5.042000};		# $] but needs to be stringified!
-my $strMinPerlVersion			= q{v5.42.0};		# $^V - nicer to read
+my $fltMinPerlVersion			= q{5.040002};		# $] but needs to be stringified!
+my $strMinPerlVersion			= q{v5.40.2};		# $^V - nicer to read
 my $pidParent				= $$;
 my $objLock				= undef;
 

@@ -77,7 +77,10 @@
 
 	v0.21
 	Simple improvements on download and build for FreeBSD.
-	Current Perl: v5.42.0
+
+	v0.22
+	Fixed Perl version to 5.40 .
+	Fixed handling of wc on FreeBSD.
 
 =end version_history
 
@@ -214,7 +217,7 @@ use constant {
 my ($str_AppName, $uri_AppPath)		= fileparse(realpath($0), qr{\.[^.]+$});	# Should now be something like uri_AppPath:=/usr/sbin/
 (undef, $uri_AppPath)			= fileparse($uri_AppPath =~ s{/+$} {}r, qr{\.[^.]+$});	# Now it should be uri_AppPath:=/usr/
 $uri_AppPath				=~ s{/+$} {}; # e.g. uri_AppPath:=/usr
-my $ver_AppVersion			= q{v0.21};
+my $ver_AppVersion			= q{v0.22};
 our $VERSION				= $ver_AppVersion;
 my $flt_MinPerlVersion			= q{5.040002};		# $] but needs to be stringified!
 my $ver_MinPerlVersion			= q{v5.40.2};		# $^V - nicer to read
@@ -317,7 +320,7 @@ my $rxp_PercentSign			= qr{\Q%\E};
 my $rxp_StartOrEnd			= qr{^|$};
 my $rxp_WHEREClauseReplace		= qr{\Q--<WHERE>--\E};
 my $rxp_UIyes				= qr{^y(?:es?)?$}i;
-my $rxp_SizingNumber			= qr{^([0-9]+)(?:\s+.+)?$};
+my $rxp_SizingNumber			= qr{^\s*([0-9]+)(?:\s+.+)?$};
 my $rxp_ValidUnits			= qr{^(?:b|[KkMmGgTtPpEeZzYy])$};
 my $rxp_AllTemplates			= qr{\Q%\E[A-Z0-9]+\Q%\E};
 my $rxp_EmptyLine			= qr{^\s*$};
@@ -752,7 +755,7 @@ CREATE VIEW complete AS
     LEFT JOIN backups AS deltas
       ON mixed_alloc_delta.delta_id = deltas.id
   GROUP BY jobs.id, tasks.id, source_groups.id, notations.notation
-    HAVING COUNT(sp.id) = gc.pathes -- Omit grouped lines, which make no sense for the source path groups
+    --HAVING COUNT(sp.id) = gc.pathes -- Omit grouped lines, which make no sense for the source path groups -- 20250713: not working, but preventing output for single sgroup elements
   ORDER BY jobs.name, tasks.time, source_groups.name, backups.mtime DESC;
 
 __fileend:database_infrastructure:dneelif__
@@ -1289,7 +1292,7 @@ LEFT JOIN backups dlts -- deltas
 LEFT JOIN notations dlno
   ON dlts.nid = dlno.id
 GROUP BY jo.id, tks.id, sgroups.id, notations.notation
-  HAVING COUNT(sp.id) == gc.pathes
+  --HAVING COUNT(sp.id) == gc.pathes -- 20250713: not working, but preventing output for single sgroup elements
 ORDER BY tks.time DESC, sgroups.name, bcks.mtime DESC };
 my $sql_SelectSizingByJobAndTaskId	= $sql_SelectSizingsByJob =~ s{$rxp_WHEREClauseReplace} {  AND tks.id = ?}r;
 my $sql_SelectSizingByJobTskAndPath	= $sql_SelectSizingsByJobWithPathes =~ s{$rxp_WHEREClauseReplace} {  AND tks.id = ?
@@ -4813,8 +4816,8 @@ sub BackupAndSize {
 			my @cmd_NULLtemplate	= ( q{echo "NULL"} );
 			my @cmd_ZeroTemplate	= ( q{echo "0"} );
 			my @cmd_NiceTemplate	= ();
-			#														freebsd    linux
-			my @cmd_DuTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{bindu}[0]), ( $^O eq q{freebsd} ? q{-A -s} : q{-b -s} ) );	# we want --apparent-size, so we get the real size on disk
+			#														freebsd		linux
+			my @cmd_DuTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{bindu}[0]), ( $^O eq q{freebsd} ? q{-A -B 512 -s} : q{-b -s} ) );	# we want --apparent-size, so we get the real size on disk
 			my @cmd_FindPreTemplate	= ( ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{binfind}[0]) );
 			my @cmd_WcPostTemplate	= ( q{|}, ShellQuote($har_JobsConfigs{MAIN}{har_Config}{_}{binwc}[0]), q{-l} );
 			my $uri_FormerSPath	= '';
@@ -5093,7 +5096,7 @@ sub BackupAndSize {
 
 							push(@are_Allocations, [
 								-1,							# INT delta size
-								$har_JobsConfigs{$str_Job}{_str_JobName},			# STR job name
+								$har_JobsConfigs{$str_Job}{_str_JobName},		# STR job name
 								$are_FSDirs->[$int_Index]{int_statinode},		# INT backup inode
 								$are_FSDirs->[$int_Index]{tsp_mtime},			# TSP backup mtime
 								$are_FSDirs->[$int_Index]{uri_Source},			# STR source path (STR_DummyLocation)
@@ -5186,7 +5189,7 @@ sub BackupAndSize {
 
 							push(@are_Allocations, [
 								$har_DBDirs->{$int_CurrentInode}{delta},			# INT delta
-								$har_JobsConfigs{$str_Job}{_str_JobName},				# STR job name
+								$har_JobsConfigs{$str_Job}{_str_JobName},			# STR job name
 								$int_CurrentInode,						# INT backup inode
 								$har_DBDirs->{$int_CurrentInode}{backup_mtime},			# TSP backup mtime
 								$har_DBDirs->{$int_CurrentInode}{spath},			# STR source path
@@ -5336,14 +5339,17 @@ sub BackupAndSize {
 							TRACE(qq{int_Index:=$int_Index, int_Part:=$int_Part, int_Value:=} . ( $int_Value // q{NULL} ));
 
 							if ( defined($str_PercentName{$int_Part}) ) {
-								TRACE(sprintf(q{Setting %s:=%s.}, $str_PercentName{$int_Part}, ( defined($int_Value) ? qq{"$int_Value"} : q{NULL} )));
 								$har_ToSize[$int_Index]{$str_PercentName{$int_Part}}		= $int_Value;
 
 								# FreeBSD's du gives us the count of 512-byte blocks.
 								if ( $^O eq q{freebsd}
+								&& defined($har_ToSize[$int_Index]{$str_PercentName{$int_Part}})
 								&& $str_PercentName{$int_Part} =~ m{$rxp_SizeKey} ) {
+									TRACE(qq{System is FreeBSD and du requires afterprocessing: multiplying $har_ToSize[$int_Index]{$str_PercentName{$int_Part}} sectors by 512 to get bytes.});
 									$har_ToSize[$int_Index]{$str_PercentName{$int_Part}}	*= 512;
 									}
+
+								TRACE(sprintf(q{Setting %s:=%s.}, $str_PercentName{$int_Part}, ( defined($int_Value) ? qq{"$int_Value"} : q{NULL} )));
 								}
 							}
 
@@ -5396,7 +5402,7 @@ sub BackupAndSize {
 						$sql_InsertSourcePath, [
 							map { [ $_ ] }
 							grep { ! $har_DuplicateCheck{bol_Sources}{$_}++ }
-							STR_DummyLocation, ( map { ( @{$har_JobsConfigs{$str_Job}{har_Config}{$_}{source}} ) } ARE_Generations )
+							STR_DummyLocation, ( grep { $_ } map { ( @{$har_JobsConfigs{$str_Job}{har_Config}{$_}{source}} ) } ARE_Generations )
 							],
 
 						# Allocate source groups and pathes

@@ -1,0 +1,10 @@
+[
+{ type: install
+  message: <<EOM
+If logrotate is used, check out etc/logrotate.d/safirbu.sample .
+This file needs to be deleted before running logrotate, though there are no
+duplicates.
+EOM
+}
+]
+

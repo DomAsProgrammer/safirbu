@@ -14,7 +14,7 @@ cmd_Shell=''
 
 # Perlbrew environment
 uri_Perl="$(which perl)"
-ver_PerlVersion='5.42.0'
+ver_PerlVersion='5.40.2'
 cmd_PerlbrewWithPerlVersion="perlbrew exec --with perl-${ver_PerlVersion}"
 uri_PerlbrewLink='https://install.perlbrew.pl'
 #export PERLBREW_ROOT="${uri_WorkDir}/perlbrew"

@@ -9,12 +9,12 @@ function _safirbu() {
 	local -a _dynamic_list
 	local os_ident
 	os_ident=$(uname -s)
-	_dynamic_list=("-h" "--help" "-u" "--usage")
+	_dynamic_list=("-h" "--help" "-u" "--usage" "-V" "--version" "-v" "--verbose" "-l" "--loglevel")
 	COMPREPLY=()
 
 	# First argument is fixed
 	if [ $COMP_CWORD -eq 1 ] ; then
-		COMPREPLY+=( $( compgen -W "${_dynamic_list[*]} backup size backup,size size,backup list create show" -- ${COMP_WORDS[$COMP_CWORD]} ) )
+		COMPREPLY+=( $( compgen -W "${_dynamic_list[*]} backup size list create show" -- ${COMP_WORDS[$COMP_CWORD]} ) )
 		return
 		fi
 
