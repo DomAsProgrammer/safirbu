@@ -1,5 +1,5 @@
 PORTNAME=	safirbu
-DISTVERSION=	0.22
+DISTVERSION=	0.23
 #PORTREVISION=	# Port/Makefile version
 
 # As long as the program has beta status this is the version given for dist packages.

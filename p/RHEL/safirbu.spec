@@ -1,5 +1,5 @@
 Name: safirbu
-Version: 0.22
+Version: 0.23
 Release: 1%{?dist}
 Summary: Solution for Automatic Full Incremental Remote Backup on Unix
 
@@ -86,6 +86,8 @@ make install
 %dir /var/log/safirbu/jobs
 
 %changelog
+* Sat Jul 19 2025 Dominik Bernhardt <domasprogrammer@gmail.com> - 0.23
+- Better logrotate settings.
 * Sat Jul 09 2025 Dominik Bernhardt <domasprogrammer@gmail.com> - 0.22
 - Return to Perl 5.40.2, Perl 5.42.0 is not working.
 - wc returns values different on FreeBSD - Bug fixed.

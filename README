@@ -78,7 +78,8 @@ Linux:
 On FreeBSD one would use the following:
   ./configure
   gmake
-  su -c 'gmake install' root
+  su
+  gmake install
 
 To check for the dependencies, one can run `make test` within the package's root
 folder.
@@ -129,12 +130,10 @@ do the trick:
   cp safirbu-<ver>/p/RHEL/safirbu.spec ~/rpmbuild/SPECS
   rpmbuild -bb ~/rpmbuild/SPECS/safirbu.spec
 
-FreeBSD: Copy p/FreeBSD/sysutils/safirbu to /usr/ports/sysutils .
-Create a distinfo and package or install. Simple steps:
-  cp -r p/FreeBSD/sysutils/safirbu /usr/ports/sysutils
-  cd /usr/ports/sysutils/safirbu
-  make makesum # The sum can't be placed into the package
-  make install # OR make package
+FreeBSD: Download p/FreeBSD/sysutils/safirbu to e.g. ~/install .
+  mkdir -p ~/install/safirbu
+  git clone https://github.com/DomAsProgrammer/safirbu.git ~/install/safirbu/
+  make  -C ~/install/safirbu/p/FreeBSD/sysutils/safirbu install # OR make `make package`
 
 ### 6. REMOVAL
 There is a `make clean` which will clean up the configuration made before as

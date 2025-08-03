@@ -82,6 +82,15 @@
 	Fixed Perl version to 5.40 .
 	Fixed handling of wc on FreeBSD.
 
+	v0.23
+	Better logrotate settings.
+	Better build instructions for FreeBSD.
+	Bugfix on different source pathes than / on missing subsequent slash at
+	the end of the source.
+	Bugfix: crontab's shell (sh) on FreeBSD delivers variable, breaking du's
+	behavior (BLOCKSIZE=K)
+	Maybe unfixed bug: list's behavior for multiple pathes?
+
 =end version_history
 
 =begin milestones
@@ -217,7 +226,7 @@ use constant {
 my ($str_AppName, $uri_AppPath)		= fileparse(realpath($0), qr{\.[^.]+$});	# Should now be something like uri_AppPath:=/usr/sbin/
 (undef, $uri_AppPath)			= fileparse($uri_AppPath =~ s{/+$} {}r, qr{\.[^.]+$});	# Now it should be uri_AppPath:=/usr/
 $uri_AppPath				=~ s{/+$} {}; # e.g. uri_AppPath:=/usr
-my $ver_AppVersion			= q{v0.22};
+my $ver_AppVersion			= q{v0.23};
 our $VERSION				= $ver_AppVersion;
 my $flt_MinPerlVersion			= q{5.040002};		# $] but needs to be stringified!
 my $ver_MinPerlVersion			= q{v5.40.2};		# $^V - nicer to read
@@ -793,11 +802,12 @@ my @str_RsyncDefaultOptions		= qw(
 	-X
 	-U
 	-z
-	--cc=md5
 	--timeout=120
 	--no-inc-recursive
 	--numeric-ids
-	); # --cc=sha1 is not available on RHEL, but on FreeBSD
+	);
+	# --cc=sha1 is not available on RHEL, but on FreeBSD
+	# --cc=md5 better let rsync decide on auto mode
 	# --contimeout=120 only usalbe for rsync modules
 my @uri_RsyncDefaultExcludes		= (
 	# For UNIX
@@ -895,6 +905,10 @@ lop_LocationSetup: {
 		$uri_LogDir		= qq{$uri_AppPath/var/log/$str_AppName};
 		$uri_LogFile		= qq{$uri_LogDir/log};
 		$uri_LogJobDir		= qq{$uri_LogDir/jobs};
+		}
+
+	if ( fc($^O) eq fc(q{FreeBSD}) ) {
+		$ENV{BLOCKSIZE}		= 512;	# Overwrites command line parameter -B, but is set to K from BSD...
 		}
 	}
 my $uri_Destination			= undef;
@@ -4456,10 +4470,10 @@ sub BackupAndSize {
 			else {
 				TRACE(qq{Source "$uri_Source" is a path.});
 				my $uri_SourcePrep	= $uri_Source . '';		# Copy
-				$uri_SourcePrep		=~ s{$rxp_Slashes} {/};		# Make plurals to singulars
+				$uri_SourcePrep		= ShellQuote($uri_SourcePrep);	# Removes last slash
 				$uri_SourcePrep		=~ s{$rxp_EndingSlashes} {/};	# Source must have an ending slash
 				#									hostname / IP address				nothing (localhost)
-				push(@cmd_Backup, ( ( defined($har_JobsConfigs{$str_Job}{_str_Remote}) ? qq{$har_JobsConfigs{$str_Job}{_str_Remote}:} : '' ) . ShellQuote($uri_SourcePrep) ));
+				push(@cmd_Backup, ( ( defined($har_JobsConfigs{$str_Job}{_str_Remote}) ? qq{$har_JobsConfigs{$str_Job}{_str_Remote}:} : '' ) . $uri_SourcePrep ));
 				}
 
 			lop_SpecificDestination: {
@@ -5345,8 +5359,9 @@ sub BackupAndSize {
 								if ( $^O eq q{freebsd}
 								&& defined($har_ToSize[$int_Index]{$str_PercentName{$int_Part}})
 								&& $str_PercentName{$int_Part} =~ m{$rxp_SizeKey} ) {
-									TRACE(qq{System is FreeBSD and du requires afterprocessing: multiplying $har_ToSize[$int_Index]{$str_PercentName{$int_Part}} sectors by 512 to get bytes.});
+									TRACE(qq{System is FreeBSD and du requires postprocessing: multiplying $har_ToSize[$int_Index]{$str_PercentName{$int_Part}} sectors by 512 to get bytes.});
 									$har_ToSize[$int_Index]{$str_PercentName{$int_Part}}	*= 512;
+									$int_Value						*= 512;
 									}
 
 								TRACE(sprintf(q{Setting %s:=%s.}, $str_PercentName{$int_Part}, ( defined($int_Value) ? qq{"$int_Value"} : q{NULL} )));
